@@ -1,0 +1,23 @@
+{
+  "name": "jetlinks-aliyun-bridge-gateway-ui",
+  "id": "jetlinks-aliyun-bridge-gateway",
+  "version": "1.0.0",
+  "description": "阿里云物联网平台接入",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jetlinks-v2/jetlinks-aliyun-bridge-gateway-ui.git"
+  },
+  "keywords": [
+    "jetlinks"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jetlinks-v2/jetlinks-aliyun-bridge-gateway-ui/issues"
+  },
+  "homepage": "https://github.com/jetlinks-v2/jetlinks-aliyun-bridge-gateway-ui#readme"
+}
