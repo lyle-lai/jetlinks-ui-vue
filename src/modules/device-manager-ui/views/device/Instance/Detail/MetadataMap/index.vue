@@ -115,10 +115,76 @@
                                 </a-select>
                             </template>
                         </template>
+                        <template #transformationRender="{ record }">
+                          <a-button type="text" @click="openTransformationModal(record)">
+                            {{ $t('MetadataMap.index.130045-29') }}
+                          </a-button>
+                        </template>
                     </a-table>
                 </j-scrollbar>
             </div>
         </div>
+      <!-- 添加值转换配置模态框 -->
+      <a-modal
+          v-model:visible="transformationModalVisible"
+          :title="$t('MetadataMap.index.130045-28')"
+          :footer="null"
+          destroyOnClose
+      >
+        <a-tabs v-model:activeKey="transformationType" @change="handleTransformationTypeChange">
+          <a-tab-pane :tab="$t('MetadataMap.index.130045-31')" key="mapping">
+            <div class="mapping-container">
+              <a-table
+                  :columns="mappingColumns"
+                  :data-source="mappingRules"
+                  :pagination="false"
+                  bordered
+              >
+                <template #bodyCell="{ column, record, index }">
+                  <template v-if="column.dataIndex === 'source'">
+                    <a-input v-model:value="record.source" :placeholder=" $t('MetadataMap.index.130045-33') " />
+                  </template>
+                  <template v-if="column.dataIndex === 'target'">
+                    <a-input v-model:value="record.target" :placeholder=" $t('MetadataMap.index.130045-35') " />
+                  </template>
+                  <template v-if="column.dataIndex === 'action'">
+                    <a-button
+                        type="text"
+                        danger
+                        @click="removeMappingRule(index)"
+                        :disabled="mappingRules.length <= 1"
+                    >
+                      <DeleteOutlined /> {{ $t('MetadataMap.index.130045-41') }}
+                    </a-button>
+                  </template>
+                </template>
+              </a-table>
+              <a-button
+                  type="dashed"
+                  style="width: 100%; margin-top: 16px"
+                  @click="addMappingRule"
+              >
+                <plus-outlined /> {{ $t('MetadataMap.index.130045-36') }}
+              </a-button>
+            </div>
+          </a-tab-pane>
+          <a-tab-pane :tab="$t('MetadataMap.index.130045-32')" key="math">
+            <a-textarea
+                v-model:value="mathExpression"
+                :rows="4"
+                :placeholder="$t('MetadataMap.index.130045-37')"
+            />
+            <div class="math-example">
+              <p>{{ $t('MetadataMap.index.130045-38') }}</p>
+            </div>
+          </a-tab-pane>
+        </a-tabs>
+        <div class="modal-footer" style="margin-top: 24px; text-align: right">
+          <a-button @click="transformationModalVisible = false">{{ $t('MetadataMap.index.130045-39') }}</a-button>
+          <a-button type="primary" @click="saveTransformationConfig">{{ $t('MetadataMap.index.130045-40') }}</a-button>
+        </div>
+      </a-modal>
+
         <div class="right">
             <j-scrollbar>
                 <div class="title">{{ $t('MetadataMap.index.431828-8') }}</div>
@@ -155,6 +221,10 @@ import { useInstanceStore } from '../../../../../store/instance';
 import { cloneDeep } from 'lodash-es';
 import {device} from "../../../../../assets";
 import { useI18n } from 'vue-i18n';
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue';
+import { create, all } from 'mathjs';
+
+const math = create(all);
 
 const { t: $t } = useI18n();
 const deviceStore = useInstanceStore();
@@ -169,6 +239,37 @@ const originalData = ref([]);
 const _value = ref<any>(undefined);
 const searchValue = ref<any>(undefined);
 const _delTag = ref<boolean>(false);
+
+// 添加转换配置相关状态
+const transformationModalVisible = ref(false);
+const currentRecord = ref<any>(null);
+const transformationType = ref('mapping');
+const mappingRules = ref([{ source: '', target: '' }]);
+const mathExpression = ref('');
+const mappingColumns = [
+  {
+    title: $t('MetadataMap.index.130045-33'),
+    dataIndex: 'source',
+    key: 'source',
+    width: '35%',
+  },
+  {
+    title: $t('MetadataMap.index.130045-35'),
+    dataIndex: 'target',
+    key: 'target',
+    width: '35%',
+  },
+  {
+    title: '操作',
+    dataIndex: 'action',
+    key: 'action',
+    width: '20%',
+  },
+];
+
+const handleTransformationTypeChange = (key: string) => {
+  transformationType.value = key;
+};
 
 const columns = [
     {
@@ -185,6 +286,12 @@ const columns = [
         dataIndex: 'original',
         width: 250,
     },
+    {
+      title: $t('MetadataMap.index.130045-28'),
+      dataIndex: 'transformation',
+      width: 180,
+      slots: { customRender: 'transformationRender' }
+    }
 ];
 
 const selectedKeys = computed(() => {
@@ -221,6 +328,7 @@ const getMetadataMapData = () => {
                                 id: item.metadataId,
                                 originalId: item.originalId,
                                 customMapping: item.customMapping,
+                                others: item.others || {}
                             };
                         }) || [],
                 );
@@ -297,6 +405,7 @@ const getDefaultMetadata = async () => {
                 type: item.valueType?.type,
                 customMapping: _m?.customMapping,
                 original: _m?.originalId, // 协议包物模型id
+                transformationConfig: _m?.others?.transformationConfig || {}
             };
         }) || [];
     dataSourceCache.value = dataSource.value;
@@ -355,6 +464,90 @@ const onClose = () => {
     filterValue.value = undefined;
     dataSource.value = originalData.value;
 };
+
+// 添加转换配置相关方法
+const openTransformationModal = (record: any) => {
+  currentRecord.value = record;
+  if (record.transformationConfig) {
+    if (record.transformationConfig.type === 'mapping') {
+      transformationType.value = 'mapping';
+      mappingRules.value = record.transformationConfig.rules || [{ source: '', target: '' }];
+      mathExpression.value = '';
+    } else {
+      transformationType.value = 'math';
+      mathExpression.value = record.transformationConfig.expression || '';
+      mappingRules.value = [{ source: '', target: '' }];
+    }
+  } else {
+    transformationType.value = 'mapping';
+    mappingRules.value = [{ source: '', target: '' }];
+    mathExpression.value = '';
+  }
+  transformationModalVisible.value = true;
+};
+
+const addMappingRule = () => {
+  mappingRules.value.push({ source: '', target: '' });
+};
+
+const removeMappingRule = (index: number) => {
+  mappingRules.value.splice(index, 1);
+  if (mappingRules.value.length === 0) {
+    mappingRules.value.push({ source: '', target: '' });
+  }
+};
+
+const validateMathExpression = (expression: string) => {
+  if (!expression.trim()) {
+    return { valid: false, message: $t('MetadataMap.index.130045-42') };
+  }
+  try {
+    const node = math.parse(expression);
+    const variables = new Set<string>();
+    node.traverse((n: any) => {
+      if (n.type === 'SymbolNode') {
+        variables.add(n.name);
+      }
+    });
+    if (variables.size > 0 && (!variables.has('x') || variables.size > 1)) {
+      return { valid: false, message: $t('MetadataMap.index.130045-43') + '只能包含变量x' };
+    }
+    return { valid: true };
+  } catch (error: any) {
+    return { valid: false, message: $t('MetadataMap.index.130045-43') + error.message };
+  }
+};
+
+const saveTransformationConfig = () => {
+  if (!currentRecord.value) return;
+
+  if (transformationType.value === 'math') {
+    const { valid, message } = validateMathExpression(mathExpression.value);
+    if (!valid && message) {
+      onlyMessage(message, 'error');
+      return;
+    }
+  }
+
+  const config = transformationType.value === 'mapping'
+      ? { type: 'mapping', rules: mappingRules.value }
+      : { type: 'math', expression: mathExpression.value };
+
+  currentRecord.value.transformationConfig = config;
+
+  const arr = [
+    {
+      metadataType: 'property',
+      metadataId: currentRecord.value.id,
+      originalId: currentRecord.value.original,
+      others: { transformationConfig: config }
+    }
+  ];
+
+  onMapData(arr, true);
+  transformationModalVisible.value = false;
+};
+
 
 onMounted(() => {
     getDefaultMetadata();
@@ -429,5 +622,24 @@ onUnmounted(() => {
             display: none;
         }
     }
+}
+
+.metadata-map {
+  // ... existing styles ...
+
+  .mapping-container {
+    margin-bottom: 16px;
+  }
+
+  .math-example {
+    margin-top: 8px;
+    color: #666;
+    font-size: 12px;
+  }
+
+  .modal-footer {
+    margin-top: 24px;
+    text-align: right;
+  }
 }
 </style>

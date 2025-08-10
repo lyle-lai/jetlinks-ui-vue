@@ -52,21 +52,34 @@
                                             filterValue ? $t('MetadataMap.index.130045-3') : $t('MetadataMap.index.130045-4')
                                         }}</span></a-tag
                                     >
-                                    <a-dropdown v-else>
-                                        <AIcon type="FilterOutlined" />
-                                        <template #overlay>
-                                            <a-menu @click="onFilter">
-                                                <a-menu-item :key="true"
-                                                    >{{ $t('MetadataMap.index.130045-5') }}</a-menu-item
-                                                >
-                                                <a-menu-item :key="false"
-                                                    >{{ $t('MetadataMap.index.130045-6') }}</a-menu-item
-                                                >
-                                            </a-menu>
-                                        </template>
-                                    </a-dropdown>
+
                                 </div>
                             </template>
+                          <template v-if="column.dataIndex === 'transformation'">
+                            <div
+                                style="
+                                width: 100%;
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: center;"
+                            >
+                              <span>{{ column.title }}</span>
+                              <a-dropdown>
+                                <AIcon type="FilterOutlined" />
+                                <template #overlay>
+                                  <a-menu @click="onFilter">
+                                    <a-menu-item :key="true"
+                                    >{{ $t('MetadataMap.index.130045-5') }}</a-menu-item
+                                    >
+                                    <a-menu-item :key="false"
+                                    >{{ $t('MetadataMap.index.130045-6') }}</a-menu-item
+                                    >
+                                  </a-menu>
+                                </template>
+                              </a-dropdown>
+                            </div>
+                          </template>
+
                         </template>
                         <template #bodyCell="{ column, text, record }">
                             <template v-if="column.dataIndex === 'name'">
@@ -107,10 +120,76 @@
                                 </a-select>
                             </template>
                         </template>
+                      <template #transformationRender="{ record }">
+                        <a-button type="text" @click="openTransformationModal(record)">
+                          {{ $t('MetadataMap.index.130045-29') }}
+                        </a-button>
+                      </template>
                     </a-table>
                 </j-scrollbar>
             </div>
         </div>
+
+        <!-- 值转换配置模态框 -->
+        <a-modal
+            v-model:visible="transformationModalVisible"
+            :title="$t('MetadataMap.index.130045-28')"
+            :footer="null"
+            destroyOnClose
+        >
+            <a-tabs v-model:activeKey="transformationType" @change="handleTransformationTypeChange">
+                <a-tab-pane :tab="$t('MetadataMap.index.130045-31')" key="mapping">
+                    <div class="mapping-container">
+                        <a-table
+                            :columns="mappingColumns"
+                            :data-source="mappingRules"
+                            :pagination="false"
+                            bordered
+                        >
+                            <template #bodyCell="{ column, record, index }">
+                                <template v-if="column.dataIndex === 'source'">
+                                    <a-input v-model:value="record.source" :placeholder=" $t('MetadataMap.index.130045-33') " />
+                                </template>
+                                <template v-if="column.dataIndex === 'target'">
+                                    <a-input v-model:value="record.target" :placeholder=" $t('MetadataMap.index.130045-35') " />
+                                </template>
+                                <template v-if="column.dataIndex === 'action'">
+                                    <a-button
+                                        type="text"
+                                        danger
+                                        @click="removeMappingRule(index)"
+                                        :disabled="mappingRules.length <= 1"
+                                    >
+                                        <DeleteOutlined /> {{ $t('MetadataMap.index.130045-41') }}
+                                    </a-button>
+                                </template>
+                            </template>
+                        </a-table>
+                        <a-button
+                            type="dashed"
+                            style="width: 100%; margin-top: 16px"
+                            @click="addMappingRule"
+                        >
+                            <plus-outlined /> {{ $t('MetadataMap.index.130045-36') }}
+                        </a-button>
+                    </div>
+                </a-tab-pane>
+                <a-tab-pane :tab="$t('MetadataMap.index.130045-32')" key="math">
+                    <a-textarea
+                        v-model:value="mathExpression"
+                        :rows="4"
+                        :placeholder="$t('MetadataMap.index.130045-37')"
+                    />
+                    <div class="math-example">
+                        <p>{{ $t('MetadataMap.index.130045-38') }}</p>
+                    </div>
+                </a-tab-pane>
+            </a-tabs>
+            <div class="modal-footer" style="margin-top: 24px; text-align: right">
+                <a-button @click="transformationModalVisible = false">{{ $t('MetadataMap.index.130045-39') }}</a-button>
+                <a-button type="primary" @click="saveTransformationConfig">{{ $t('MetadataMap.index.130045-40') }}</a-button>
+            </div>
+        </a-modal>
         <div class="right">
             <j-scrollbar>
                 <div class="title">{{ $t('MetadataMap.index.130045-8') }}</div>
@@ -146,8 +225,10 @@ import { onlyMessage } from '@/utils/comm';
 import { getMetadataMapById, metadataMapById, getProtocolMetadata } from '../../../../../api/instance';
 import { cloneDeep } from 'lodash-es';
 import { useI18n } from 'vue-i18n';
+import { create, all } from 'mathjs';
 
 const { t: $t } = useI18n();
+const math = create(all);
 
 const productStore = useProductStore();
 const { current: productDetail } = storeToRefs(productStore);
@@ -164,6 +245,32 @@ const _delTag = ref<boolean>(false);
 //   return true
 // }
 
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { Modal, Tabs, TabPane, Form, Input, Button, Table, Space, message } from 'ant-design-vue';
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue';
+
+
+const mappingColumns = [
+  {
+    title: $t('MetadataMap.index.130045-33'),
+    dataIndex: 'source',
+    key: 'source',
+    width: '35%',
+  },
+  {
+    title: $t('MetadataMap.index.130045-35'),
+    dataIndex: 'target',
+    key: 'target',
+    width: '35%',
+  },
+  {
+    title: '操作',
+    dataIndex: 'action',
+    key: 'action',
+    width: '20%',
+  },
+];
+
 const columns = [
     {
         title: $t('MetadataMap.index.130045-25'),
@@ -175,14 +282,99 @@ const columns = [
         dataIndex: 'name',
     },
     {
-        title: $t('MetadataMap.index.130045-1'),
-        dataIndex: 'plugin',
-        width: 250,
-        // sorter: tableFilter
-    },
+            title: $t('MetadataMap.index.130045-1'),
+            dataIndex: 'plugin',
+            width: 250,
+            // sorter: tableFilter
+        },
+        {
+          title: $t('MetadataMap.index.130045-28'),
+          dataIndex: 'transformation',
+          width: 180,
+          slots: { customRender: 'transformationRender' } // Vue 3 用 slots
+        }
 ];
 
 const _value = ref<any>(undefined);
+const transformationModalVisible = ref(false);
+const currentRecord = ref<any>(null);
+const transformationType = ref('mapping');
+const mappingRules = ref([{ source: '', target: '' }]);
+const mathExpression = ref('');
+
+const transformationModal = ref<any>(null);
+
+const handleTransformationTypeChange = (key: string) => {
+    transformationType.value = key;
+};
+
+const openTransformationModal = (record: any) => {
+  currentRecord.value = record;
+  // 加载已保存的转换配置
+  if (record.transformationConfig) {
+    if (record.transformationConfig.type === 'mapping') {
+      transformationType.value = 'mapping';
+      mappingRules.value = record.transformationConfig.rules || [{ source: '', target: '' }];
+      mathExpression.value = '';
+    } else {
+      transformationType.value = 'math';
+      mathExpression.value = record.transformationConfig.expression || '';
+      mappingRules.value = [{ source: '', target: '' }];
+    }
+  } else {
+    // 默认值
+    transformationType.value = 'mapping';
+    mappingRules.value = [{ source: '', target: '' }];
+    mathExpression.value = '';
+  }
+  transformationModalVisible.value = true;
+};
+
+const addMappingRule = () => {
+  mappingRules.value.push({ source: '', target: '' });
+};
+
+const removeMappingRule = (index: number) => {
+  mappingRules.value.splice(index, 1);
+  if (mappingRules.value.length === 0) {
+    mappingRules.value.push({ source: '', target: '' });
+  }
+};
+
+const saveTransformationConfig = () => {
+  if (!currentRecord.value) return;
+
+  // 数学公式验证
+  if (transformationType.value === 'math') {
+    const { valid, message: errorMessage } = validateMathExpression(mathExpression.value);
+    if (!valid) {
+      message.error(errorMessage);
+      return;
+    }
+  }
+
+  const config = transformationType.value === 'mapping'
+    ? { type: 'mapping', rules: mappingRules.value }
+    : { type: 'math', expression: mathExpression.value };
+
+  // 保存到记录中
+  currentRecord.value.transformationConfig = config;
+
+  // 构造包含转换规则的API请求参数
+  const arr = [
+    {
+      metadataType: 'property',
+      metadataId: currentRecord.value.id,
+      originalId: currentRecord.value.plugin,
+      others: { transformationConfig: config } // 添加到others字段
+    }
+  ];
+
+  // 调用现有API保存方法
+  onMapData(arr, true);
+
+  transformationModalVisible.value = false;
+};
 
 const selectedKeys = computed(() => {
     return (
@@ -213,6 +405,7 @@ const getMetadataMapData = () => {
                         id: item.metadataId,
                         pluginId: item.originalId,
                         customMapping: item?.customMapping,
+                        others: item.others
                       };
                     }) || [],
             );
@@ -222,6 +415,43 @@ const getMetadataMapData = () => {
         resolve([])
       }
     });
+};
+
+// 添加公式验证函数
+const validateMathExpression = (expression) => {
+  // 支持表达式为空
+  if (!expression.trim()) {
+    return { valid: true};
+  }
+  try {
+    // 检查表达式语法是否有效
+    const node = math.parse(expression);
+
+    const variables = new Set();
+
+    // 遍历AST收集所有变量
+    node.traverse((n) => {
+      if (n.type === 'SymbolNode') {
+        variables.add(n.name);
+      }
+    });
+
+    // 检查是否只包含变量x
+    if (variables.size > 0) {
+      if (!variables.has('x') || variables.size > 1) {
+        return {
+          valid: false,
+          message: $t('MetadataMap.index.130045-43') // 需要添加国际化消息: "表达式只能包含变量x"
+        };
+      }
+    }
+    return { valid: true };
+  } catch (error) {
+    return {
+      valid: false,
+      message: $t('MetadataMap.index.130045-43') + error.message
+    };
+  }
 };
 
 const customRow = (record: any) => {
@@ -285,6 +515,7 @@ const getDefaultMetadata = async () => {
                 type: item.valueType?.type,
                 customMapping: _m?.customMapping,
                 plugin: _m?.pluginId, // 插件物模型id
+                transformationConfig: _m?.others?.transformationConfig
             };
         }) || [];
     dataSourceCache.value = dataSource.value;
@@ -438,8 +669,25 @@ onUnmounted(() => {
     }
 
     .metadata-title {
-        color: #666666;
-    }
+    color: #666666;
+}
+
+.mapping-container {
+    margin-bottom: 16px;
+}
+
+.math-example {
+    margin-top: 8px;
+    color: #666;
+    font-size: 12px;
+}
+
+.arrow {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #999;
+}
 
     :deep(.ant-table-selection-column) {
         padding: 0;
