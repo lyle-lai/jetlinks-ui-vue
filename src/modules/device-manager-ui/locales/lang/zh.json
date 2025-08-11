@@ -248,6 +248,8 @@
     "MetadataMap.index.130045-41": "删除",
     "MetadataMap.index.130045-42": "公式不能为空",
     "MetadataMap.index.130045-43": "公式语法错误",
+    "MetadataMap.index.130045-44": "请至少添加一条有效的值映射规则（源值和目标值不能为空）",
+    "MetadataMap.index.130045-45": "请先完成当前规则的填写",
     "Metadata.Table.150159-0": "序号",
     "Metadata.Table.150159-1": "分组_1",
     "Metadata.group.497268-0": "编辑",

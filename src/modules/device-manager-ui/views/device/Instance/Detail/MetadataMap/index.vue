@@ -244,7 +244,11 @@ const _delTag = ref<boolean>(false);
 const transformationModalVisible = ref(false);
 const currentRecord = ref<any>(null);
 const transformationType = ref('mapping');
-const mappingRules = ref([{ source: '', target: '' }]);
+interface MappingRule {
+  source: string;
+  target: string;
+}
+const mappingRules = ref<MappingRule[]>([{ source: '', target: '' }]);
 const mathExpression = ref('');
 const mappingColumns = [
   {
@@ -471,7 +475,12 @@ const openTransformationModal = (record: any) => {
   if (record.transformationConfig) {
     if (record.transformationConfig.type === 'mapping') {
       transformationType.value = 'mapping';
-      mappingRules.value = record.transformationConfig.rules || [{ source: '', target: '' }];
+
+      mappingRules.value = Object.entries(record.transformationConfig.rules || {})
+          .map(([source, target]) => ({
+            source,
+            target: String(target) // 显式转换为字符串
+          }));
       mathExpression.value = '';
     } else {
       transformationType.value = 'math';
@@ -487,6 +496,11 @@ const openTransformationModal = (record: any) => {
 };
 
 const addMappingRule = () => {
+  const lastRule = mappingRules.value[mappingRules.value.length - 1];
+  if (lastRule && (lastRule.source.trim() === '' || lastRule.target.trim() === '')) {
+    onlyMessage($t('MetadataMap.index.130045-45'), 'warning');
+    return;
+  }
   mappingRules.value.push({ source: '', target: '' });
 };
 
@@ -528,9 +542,28 @@ const saveTransformationConfig = () => {
       return;
     }
   }
+  else if (transformationType.value === 'mapping') {
+    // 过滤空规则并验证
+    const validRules = mappingRules.value.filter(rule =>
+        rule.source.trim() !== '' && rule.target.trim() !== ''
+    );
+    if (validRules.length === 0) {
+      onlyMessage($t('MetadataMap.index.130045-44'), 'error');
+      return;
+    }
+  }
 
   const config = transformationType.value === 'mapping'
-      ? { type: 'mapping', rules: mappingRules.value }
+      ? {
+        type: 'mapping',
+        rules: mappingRules.value
+            // 过滤空字符串键值对
+            .filter(rule => rule.source.trim() !== '' && rule.target.trim() !== '')
+            .reduce((map, rule) => {
+              map[rule.source] = rule.target;
+              return map;
+        }, {} as Record<string, string>)
+      }
       : { type: 'math', expression: mathExpression.value };
 
   currentRecord.value.transformationConfig = config;

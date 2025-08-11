@@ -230,6 +230,11 @@ import { create, all } from 'mathjs';
 const { t: $t } = useI18n();
 const math = create(all);
 
+interface MappingRule {
+  source: string;
+  target: string;
+}
+
 const productStore = useProductStore();
 const { current: productDetail } = storeToRefs(productStore);
 const dataSourceCache = ref([]);
@@ -299,7 +304,7 @@ const _value = ref<any>(undefined);
 const transformationModalVisible = ref(false);
 const currentRecord = ref<any>(null);
 const transformationType = ref('mapping');
-const mappingRules = ref([{ source: '', target: '' }]);
+const mappingRules: Ref<MappingRule[]> = ref([{ source: '', target: '' }]);
 const mathExpression = ref('');
 
 const transformationModal = ref<any>(null);
@@ -314,7 +319,12 @@ const openTransformationModal = (record: any) => {
   if (record.transformationConfig) {
     if (record.transformationConfig.type === 'mapping') {
       transformationType.value = 'mapping';
-      mappingRules.value = record.transformationConfig.rules || [{ source: '', target: '' }];
+
+      mappingRules.value = Object.entries(record.transformationConfig.rules || {})
+          .map(([source, target]) => ({
+            source,
+            target: String(target) // 显式转换为字符串
+          }));
       mathExpression.value = '';
     } else {
       transformationType.value = 'math';
@@ -331,6 +341,12 @@ const openTransformationModal = (record: any) => {
 };
 
 const addMappingRule = () => {
+
+  const lastRule = mappingRules.value[mappingRules.value.length - 1];
+  if (!lastRule.source.trim() && !lastRule.target.trim()) {
+    message.warning($t('MetadataMap.index.130045-45')); // 请先完成当前规则
+    return;
+  }
   mappingRules.value.push({ source: '', target: '' });
 };
 
@@ -354,8 +370,28 @@ const saveTransformationConfig = () => {
   }
 
   const config = transformationType.value === 'mapping'
-    ? { type: 'mapping', rules: mappingRules.value }
-    : { type: 'math', expression: mathExpression.value };
+      ? {
+        type: 'mapping',
+        rules: mappingRules.value
+            // 过滤空字符串键值对
+            .filter(rule => rule.source.trim() !== '' && rule.target.trim() !== '')
+            .reduce((map, rule) => {
+              map[rule.source] = rule.target;
+              return map;
+            }, {} as Record<string, string>)
+      }
+      : { type: 'math', expression: mathExpression.value };
+
+  // 添加验证逻辑
+  if (transformationType.value === 'mapping') {
+    const validRules = mappingRules.value.filter(rule =>
+        rule.source.trim() !== '' && rule.target.trim() !== ''
+    );
+    if (validRules.length === 0) {
+      message.error($t('MetadataMap.index.130045-44')); // 请添加至少一个有效的值映射规则
+      return;
+    }
+  }
 
   // 保存到记录中
   currentRecord.value.transformationConfig = config;
@@ -419,9 +455,8 @@ const getMetadataMapData = () => {
 
 // 添加公式验证函数
 const validateMathExpression = (expression) => {
-  // 支持表达式为空
   if (!expression.trim()) {
-    return { valid: true};
+    return { valid: false, message: $t('MetadataMap.index.130045-42') };
   }
   try {
     // 检查表达式语法是否有效

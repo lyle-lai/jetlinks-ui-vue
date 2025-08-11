@@ -248,6 +248,8 @@
     "MetadataMap.index.130045-41": "Delete",
     "MetadataMap.index.130045-42": "Formula cannot be empty",
     "MetadataMap.index.130045-43": "Formula syntax error",
+    "MetadataMap.index.130045-44": "Please add at least one valid value mapping rule (source and target values cannot be empty)",
+    "MetadataMap.index.130045-45": "Please complete the current rule first",
     "Metadata.Table.150159-0": "Serial number",
     "Metadata.Table.150159-1": "Group_1",
     "Metadata.group.497268-0": "edit",
