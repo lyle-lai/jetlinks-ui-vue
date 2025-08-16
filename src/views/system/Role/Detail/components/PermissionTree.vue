@@ -408,20 +408,7 @@ const updateAuthority = (row: any) => {
     }
     if (row.children?.length > 0) {
         row.children?.forEach((item: any) => {
-            if (item.accessSupport && item.accessSupport.value === 'support') {
-                // 如果当前数据权限已有值，且菜单权限没有被选中或被半选   则清空对应的数据权限
-                if (item.selectAccesses && !item.granted && !item.indeterminate)
-                    item.selectAccesses = '';
-                // 如果当前数据权限没有值，且菜单权限有被选中或者是被半选   则将数据权限变为默认值'creator'
-                else if (
-                    !item.selectAccesses &&
-                    (item.granted || item.indeterminate)
-                )
-                    item.selectAccesses = 'creator';
-            }
-            if (item.children) {
-                updateAuthority(item.children);
-            }
+            updateAuthority(item);
         });
     }
 };
@@ -461,7 +448,7 @@ function treeToSimple(_treeData: tableItemType[]) {
     if(isNoCommunity){
         let assets: any[] = [];
         flatTableData?.forEach((item: any) => {
-            assets = [...assets, ...item.assetAccesses];
+            assets = [...assets, ...(item.assetAccesses || [])];
         });
         bulkOptions.value = uniqBy(assets, 'supportId')?.map((m: any) => ({
             label: m.i18nName || m.name,
@@ -503,6 +490,10 @@ function setStatus(
     prop: 'children' | 'buttons' = 'children',
 ) {
     const childrens = target[prop] as any[];
+    if (!childrens || childrens.length === 0) {
+        target.indeterminate = false;
+        return;
+    }
     if (childrens && childrens instanceof Array) {
         // 如果子选项有半全选，则当前节点直接为半全选
         const indeterminateLen = childrens.filter(

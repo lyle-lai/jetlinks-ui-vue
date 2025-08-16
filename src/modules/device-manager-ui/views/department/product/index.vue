@@ -50,16 +50,6 @@
                                             />{{ $t('product.index.083446-3') }}
                                         </j-permission-button>
                                     </a-menu-item>
-                                    <a-menu-item>
-                                        <j-permission-button
-                                            :hasPermission="`${permission}:assert`"
-                                            @click="() => table.clickEdit()"
-                                        >
-                                            <AIcon
-                                                type="EditOutlined"
-                                            />{{ $t('product.index.083446-4') }}
-                                        </j-permission-button>
-                                    </a-menu-item>
                                 </a-menu>
                             </template>
                         </a-dropdown>
@@ -103,24 +93,6 @@
                                         class="card-item-content-value"
                                     >
                                         {{ slotProps.id }}
-                                    </div>
-                                    </j-ellipsis>
-                                </a-col>
-                                <a-col :span="12">
-                                    <div class="card-item-content-text">
-                                        {{ $t('product.index.083446-5') }}
-                                    </div>
-                                    <j-ellipsis style="width: calc(100% - 20px);">
-                                    <div
-                                        style="cursor: pointer"
-                                        class="card-item-content-value"
-                                    >
-                                        {{
-                                            tableData.permissionList.length &&
-                                            table.getPermissLabel(
-                                                slotProps.permission,
-                                            )
-                                        }}
                                     </div>
                                     </j-ellipsis>
                                 </a-col>
@@ -174,12 +146,6 @@
                     </CardBox>
                 </template>
 
-                <template #permission="slotProps">
-                    {{
-                        tableData.permissionList.length &&
-                        table.getPermissLabel(slotProps.permission)
-                    }}
-                </template>
                 <template #state="slotProps">
                     <j-badge-status
                         :status="slotProps.state.value"
@@ -220,17 +186,6 @@
                 @confirm="table.addConfirm"
                 @next="nextAction"
             />
-            <EditPermissionDialog
-                v-if="dialogs.editShow"
-                v-model:visible="dialogs.editShow"
-                :ids="dialogs.selectIds"
-                :permission-list="dialogs.permissList"
-                :parent-id="parentId"
-                :all-permission="tableData.permissionList"
-                asset-type="product"
-                :defaultPermission="tableData.defaultPermission"
-                @confirm="table.refresh"
-            />
             <NextDialog
                 v-if="dialogs.nextShow"
                 v-model:visible="dialogs.nextShow"
@@ -243,17 +198,12 @@
 <script setup lang="ts" name="product">
 
 import AddDeviceOrProductDialog from '../components/AddDeviceOrProductDialog.vue';
-import EditPermissionDialog from '../components/EditPermissionDialog.vue';
 import NextDialog from '../components/NextDialog.vue';
 import { onlyMessage } from '@/utils/comm';
 import {
     getDeviceOrProductList_api,
-    getPermission_api,
-    getPermissionDict_api,
     unBindDeviceOrProduct_api,
-    getBindingsPermission,
 } from '../../../api/department';
-import { intersection } from 'lodash-es';
 import { useDepartmentStore } from '@/store/department';
 import {systemImg} from "@/assets";
 import { useI18n } from 'vue-i18n';
@@ -288,14 +238,6 @@ const columns = [
             type: 'string',
             first: true,
         },
-    },
-    {
-        title: $t('product.index.083446-5'),
-        dataIndex: 'permission',
-        key: 'permission',
-        ellipsis: true,
-        scopedSlots: true,
-        width: 300,
     },
     {
         title: $t('product.index.083446-7'),
@@ -345,7 +287,6 @@ const tableData = reactive({
 });
 const table = {
     init: () => {
-        table.getPermissionDict();
         watch(
             () => props.parentId,
             () => {
@@ -363,13 +304,6 @@ const table = {
         else
             return [
                 {
-                    permission: `${permission}:assert`,
-                    key: 'edit',
-                    tooltip: { title: $t('product.index.083446-12') },
-                    icon: 'EditOutlined',
-                    onClick: () => table.clickEdit(data),
-                },
-                {
                     permission: `${permission}:bind`,
                     key: 'unbind',
                     tooltip: { title: $t('product.index.083446-13') },
@@ -382,21 +316,6 @@ const table = {
             ];
     },
 
-    // 获取权限数据字典
-    getPermissionDict: () => {
-        getPermissionDict_api().then((resp: any) => {
-            tableData.permissionList = resp.result;
-        });
-    },
-    // 获取权限名称
-    getPermissLabel: (values: string[]) => {
-        const permissionList = tableData.permissionList;
-        if (permissionList.length < 1 || values.length < 1) return '';
-        const result = values.map(
-            (key) => permissionList.find((item: any) => item.id === key)?.name,
-        );
-        return result.join(',');
-    },
     // 选中
     onSelectChange: (row: any) => {
         const index = tableData._selectedRowKeys.indexOf(row.id);
@@ -411,7 +330,6 @@ const table = {
     },
     // 取消全选
     cancelSelect: () => {
-        // console.log(1111);
         tableData._selectedRowKeys = [];
         tableData.selectedRows = [];
     },
@@ -464,44 +382,34 @@ const table = {
                 };
                 const { pageIndex, pageSize, total, data } =
                     resp.result as resultType;
-                const ids = data.map((item) => item.id);
-                getPermission_api('product', ids, parentId).then(
-                    (perResp: any) => {
-                        const permissionObj = {};
-                        perResp.result.forEach((item: any) => {
-                            permissionObj[item.assetId] =
-                                item.grantedPermissions;
-                        });
-                        data.forEach((item) => {
-                            item.permission = permissionObj[item.id];
-                            item.state = {
-                                value:
-                                    item.state === 1
-                                        ? 'online'
-                                        : item.state === 0
-                                        ? 'offline'
-                                        : '',
-                                text:
-                                    item.state === 1
-                                        ? $t('product.index.083446-9')
-                                        : item.state === 0
-                                        ? $t('product.index.083446-10')
-                                        : '',
-                            };
-                        });
+                
+                data.forEach((item) => {
+                    item.state = {
+                        value:
+                            item.state === 1
+                                ? 'online'
+                                : item.state === 0
+                                ? 'offline'
+                                : '',
+                        text:
+                            item.state === 1
+                                ? $t('product.index.083446-9')
+                                : item.state === 0
+                                ? $t('product.index.083446-10')
+                                : '',
+                    };
+                });
 
-                        resolve({
-                            code: 200,
-                            result: {
-                                data: data,
-                                pageIndex,
-                                pageSize,
-                                total,
-                            },
-                            status: 200,
-                        });
+                resolve({
+                    code: 200,
+                    result: {
+                        data: data,
+                        pageIndex,
+                        pageSize,
+                        total,
                     },
-                );
+                    status: 200,
+                });
             });
         }),
     // 整理参数并获取数据
@@ -547,27 +455,6 @@ const table = {
             };
         }
     },
-    queryPermissionList: async (ids: string[]) => {
-        const resp: any = await getBindingsPermission('product', ids)
-        if(resp.status === 200){
-            const arr = resp.result.map((item: any) => {
-                return item?.permissionInfoList?.map((i: any) => i?.id)
-            })
-            return intersection(...arr)
-        }
-        return []
-    },
-    clickEdit: async (row?: any) => {
-        const ids = row ? [row.id] : [...tableData._selectedRowKeys];
-        if (ids.length < 1) return onlyMessage($t('product.index.083446-15'), 'warning');
-        tableData.defaultPermission = row ? row?.permission : intersection(...tableData.selectedRows.map(
-            (item) => item.permission,
-        )) as string[]
-        const _result = await table.queryPermissionList(ids)
-        dialogs.selectIds = ids;
-        dialogs.permissList = _result as string[];
-        dialogs.editShow = true;
-    },
     clickUnBind: (row?: any) => {
         const ids = row ? [row.id] : [...tableData._selectedRowKeys];
         if (ids.length < 1) return onlyMessage($t('product.index.083446-16'), 'warning');
@@ -605,7 +492,6 @@ const dialogs = reactive({
     selectIds: [] as string[],
     permissList: [] as string[],
     addShow: false,
-    editShow: false,
     nextShow: false,
 });
 

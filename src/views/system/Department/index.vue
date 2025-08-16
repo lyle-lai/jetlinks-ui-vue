@@ -23,11 +23,12 @@
                 v-model:bindBool="bindBool"
               />
             </a-tab-pane>
-            <a-tab-pane key="position" :tab="$t('Department.index.945805-3')">
-              <Position :parentId="departmentId" @changeTabs="onChangeTabs" />
-            </a-tab-pane>
+<!--            <a-tab-pane key="position" :tab="$t('Department.index.945805-3')">-->
+<!--              <Position :parentId="departmentId" @changeTabs="onChangeTabs" />-->
+<!--            </a-tab-pane>-->
             <a-tab-pane key="user" :tab="$t('Department.index.945805-2')">
-              <User :parentId="departmentId" :positionId="positionId" />
+<!--              <User :parentId="departmentId" :positionId="positionId" />-->
+              <User :parentId="departmentId"/>
             </a-tab-pane>
           </a-tabs>
           <User v-else :parentId="departmentId" />
@@ -43,7 +44,7 @@ import User from "./user/index.vue";
 import Position from "./positions/index.vue";
 import { getModulesComponents, isNoCommunity } from "@/utils";
 
-const activeKey = ref<"product" | "device" | "user">("product");
+const activeKey = ref<"product" | "device" | "user">("device");
 
 const departmentId = ref<string>("");
 const positionId = ref<string>("");

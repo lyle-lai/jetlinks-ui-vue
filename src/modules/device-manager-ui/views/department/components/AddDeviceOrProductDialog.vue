@@ -1,20 +1,12 @@
 <template>
     <a-modal class="add-device-or-product-dialog-container" :title="$t('components.AddDeviceOrProductDialog.314014-0')" width="1440px" :maskClosable="false" @ok="confirm"
         :confirmLoading="loading" @cancel="cancel" visible>
-        <h5 class="row">
-            <AIcon type="ExclamationCircleOutlined" style="margin-right: 6px" />
-            {{ $t('components.AddDeviceOrProductDialog.314014-1') }}
-        </h5>
+<!--        <h5 class="row">-->
+<!--            <AIcon type="ExclamationCircleOutlined" style="margin-right: 6px" />-->
+<!--            {{ $t('components.AddDeviceOrProductDialog.314014-1') }}-->
+<!--        </h5>-->
 
-        <div style="display: flex; margin-left: 24px;">
-                <div class="row">
-                <span style="margin-right: 8px">{{ $t('components.AddDeviceOrProductDialog.314014-2') }}</span>
-                <a-switch v-model:checked="bulkBool" :checked-children="$t('components.AddDeviceOrProductDialog.314014-3')" :un-checked-children="$t('components.AddDeviceOrProductDialog.314014-4')" style="width: 56px" />
-            </div>
-            <div v-show="bulkBool" style="margin-left: 30px;">
-                <a-checkbox-group v-model:value="bulkList" :options="options" />
-            </div>
-        </div>
+        <div style="display: flex; margin-left: 24px;"></div>
 
         <!-- <pro-search
             type="simple"
@@ -40,9 +32,6 @@
                 onSelect: table.onSelectChange,
                 onSelectNone: table.cancelSelect,
                 onSelectAll: selectAll,
-                getCheckboxProps: (record) => ({
-                  disabled: !(record.permissionList?.length && record.permissionList.find((item: any) => item.value === 'share'))
-                }),
             }"
             :columns="columns"
             style="max-height: 500px; overflow:auto"
@@ -80,40 +69,13 @@
                                     {{ slotProps.id }}
                                 </div>
                             </a-col>
-                            <a-col :span="12">
-                                <div class="card-item-content-text">
-                                    {{ $t('components.AddDeviceOrProductDialog.314014-5') }}
-                                </div>
-                                <div style="cursor: pointer; height: 30px" class="card-item-content-value"
-                                    @click="(e) => e.stopPropagation()">
-<!--                                    <a-checkbox-group v-model:value="slotProps.selectPermissions-->
-<!--                                        " :options="slotProps.permissionList" />-->
-                                  <ButtonCheckBox
-                                      :bulkBool="bulkBool"
-                                      :options="slotProps.permissionList"
-                                      :selected="table.selectedRows.some(i => i.id === slotProps.id)"
-                                      :value="table.selectedRows.find(i => i.id === slotProps.id)?.selectPermissions || []"
-                                      @change="(val) => onChange(val, slotProps)"
-                                  />
-                                </div>
-                            </a-col>
+                            
                         </a-row>
                     </template>
                 </CardBox>
             </template>
 
-            <template #permission="slotProps">
-                <div style="cursor: pointer" class="card-item-content-value" @click="(e) => e.stopPropagation()">
-<!--                    <a-checkbox-group v-model:value="slotProps.selectPermissions" :options="slotProps.permissionList" />-->
-                  <ButtonCheckBox
-                      :bulkBool="bulkBool"
-                      :options="slotProps.permissionList"
-                      :selected="table.selectedRows.some(i => i.id === slotProps.id)"
-                      :value="table.selectedRows.find(i => i.id === slotProps.id)?.selectPermissions || []"
-                      @change="(val) => onChange(val, slotProps)"
-                  />
-                </div>
-            </template>
+            
             <template #state="slotProps">
                 <j-badge-status :status="slotProps.state.value" :text="slotProps.state.text" :statusNames="{
                     online: 'processing',
@@ -143,7 +105,6 @@ import { useDepartmentStore } from '@/store/department';
 import dayjs from 'dayjs';
 import { systemImg } from '@/assets/index'
 import { useI18n } from 'vue-i18n';
-import ButtonCheckBox from './ButtonCheckBox.vue'
 
 const { t: $t } = useI18n();
 const departmentStore = useDepartmentStore();
@@ -171,10 +132,6 @@ const confirm = () => {
         targetId: props.parentId,
         assetType: props.assetType,
         assetIdList: [item.id],
-        // 保存时, 过滤没有的权限
-        permission: item.selectPermissions.filter((f: any) =>
-            (item.permissionList || []).map((m: any) => m.value).includes(f),
-        ),
     }));
 
     // 分配产品资产后, 进入设备资产分配
@@ -196,15 +153,6 @@ const confirm = () => {
         });
 };
 const queryParams = ref({});
-const bulkBool = ref<boolean>(true);
-const bulkList = ref<string[]>(['read']);
-const options = computed(() =>
-    props.allPermission.map((item) => ({
-        label: item.name,
-        value: item.id,
-        disabled: item.id === 'read',
-    })),
-);
 
 const columns = props.queryColumns.filter(
     (item) => item.dataIndex !== 'action',
@@ -235,13 +183,7 @@ const searchColumns = computed(() => {
     })
 })
 
-const onChange = (val: string[], record: any) => {
-  table.selectedRows.forEach((i: any) => {
-    if(i.id === record.id){
-      i.selectPermissions = val
-    }
-  })
-}
+
 
 const table: any = {
     _selectedRowKeys: ref<string[]>([]), // 选中项的id
@@ -250,65 +192,9 @@ const table: any = {
     tableData: [] as any[], // 列表的浅拷贝
 
     init: () => {
-        watch(
-            [bulkBool, bulkList, () => table._selectedRowKeys],
-            (n) => {
-                const nValue = n[2].value;
-                const oValue = table.backRowKeys;
-
-                table.selectedRows.forEach((item: any) => {
-                    // 启用批量设置
-                    if (bulkBool.value) {
-                        // 将已勾选的权限和批量设置的权限进行合并，并与自己可选的权限进行比对，取交集作为当前选中的权限
-                        // fix: bug#10756
-                        item.selectPermissions = n[1];
-                        // 禁用单独勾选
-                        (item.permissionList || []).forEach((permission: any) => {
-                            permission.disabled = true;
-                        });
-                    } else {
-                        // 取消批量设置
-                        // 放开自己权限的勾选限制，查看为必选
-                        (item.permissionList || []).forEach((permission: any) => {
-                            permission.disabled = permission.value === 'read';
-                        });
-                    }
-                });
-
-                // 取消勾选时触发
-                if (nValue && nValue.length < oValue.length) {
-                    // 拿到取消选中的项的id
-                    const removedKeys = oValue.filter(
-                        (key: string) => !nValue.includes(key),
-                    );
-                    // 将取消勾选的项的权限重置
-                    removedKeys.forEach((removedKey: string) => {
-                        const removedItem = table.tableData.find(
-                            (item: any) => item.id === removedKey,
-                        );
-                        removedItem.permissionList.forEach(
-                            (permission: any) => (permission.disabled = true),
-                        );
-                        removedItem.selectPermissions = ['read'];
-                    });
-                }
-                if (!nValue.length) {
-                    // 列表取消全部选择
-                    table.tableData.forEach((item: any) => {
-                        item.selectPermissions = ['read'];
-                    });
-                }
-            },
-            { deep: true },
-        );
     },
     // 选中
     onSelectChange: (row: any) => {
-        // 若该项的可选权限中没有分享权限，则不支持任何操作
-        if (!row.permissionList.find((item: any) => item.value === 'share')) {
-            onlyMessage($t('components.AddDeviceOrProductDialog.314014-8'), 'warning');
-            return;
-        }
         const selectedRowKeys = table._selectedRowKeys.value;
         const index = selectedRowKeys.indexOf(row.id);
 
@@ -344,68 +230,38 @@ const table: any = {
                 };
                 const { pageIndex, pageSize, total, data } =
                     resp.result as resultType;
-                const ids = data.map((item) => item.id);
-                // 资产权限排序: 查看/编辑/删除/共享
-                const idxMap = {
-                    read: 0,
-                    save: 1,
-                    delete: 2,
-                    share: 3,
-                };
-                // fix: bug#10706
-                getBindingsPermission(props.assetType, ids).then(
-                    (perResp: any) => {
-                        data.forEach((item) => {
-                            item.permissionList = perResp.result
-                                .find((f: any) => f?.assetId === item.id)
-                                ?.permissionInfoList?.map((m: any) => ({
-                                    label: m.name,
-                                    value: m.id,
-                                    disabled: true,
-                                })) || [];
-                            item.selectPermissions = ['read'];
-                            // 资产排序
-                            item.permissionList = item.permissionList
-                                ?.map((m: any) => {
-                                    return {
-                                        ...m,
-                                        idx: idxMap[m.value],
-                                    };
-                                })
-                                ?.sort((a: any, b: any) => a.idx - b.idx);
+                data.forEach((item) => {
 
-                            // 产品的状态进行转换处理
-                            if (props.assetType === 'product') {
-                                item.state = {
-                                    value:
-                                        item.state === 1
-                                            ? 'online'
-                                            : item.state === 0
-                                                ? 'offline'
-                                                : '',
-                                    text:
-                                        item.state === 1
-                                            ? $t('components.AddDeviceOrProductDialog.314014-9')
-                                            : item.state === 0
-                                                ? $t('components.AddDeviceOrProductDialog.314014-10')
-                                                : '',
-                                };
-                            }
-                        });
-                        resolve({
-                            code: 200,
-                            result: {
-                                data: data.sort(
-                                    (a, b) =>  b.createTime - a.createTime
-                                ),
-                                pageIndex,
-                                pageSize,
-                                total,
-                            },
-                            status: 200,
-                        });
+                    // 产品的状态进行转换处理
+                    if (props.assetType === 'product') {
+                        item.state = {
+                            value:
+                                item.state === 1
+                                    ? 'online'
+                                    : item.state === 0
+                                        ? 'offline'
+                                        : '',
+                            text:
+                                item.state === 1
+                                    ? $t('components.AddDeviceOrProductDialog.314014-9')
+                                    : item.state === 0
+                                        ? $t('components.AddDeviceOrProductDialog.314014-10')
+                                        : '',
+                        };
+                    }
+                });
+                resolve({
+                    code: 200,
+                    result: {
+                        data: data.sort(
+                            (a, b) =>  b.createTime - a.createTime
+                        ),
+                        pageIndex,
+                        pageSize,
+                        total,
                     },
-                );
+                    status: 200,
+                });
             });
         }),
     // 整理参数并获取数据

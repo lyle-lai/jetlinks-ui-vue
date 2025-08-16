@@ -52,17 +52,7 @@
                       {{ $t('device.index.988419-3') }}
                     </j-permission-button>
                   </a-menu-item>
-                  <a-menu-item>
-                    <j-permission-button
-                      :hasPermission="`${permission}:assert`"
-                      @click="table.clickEdit()"
-                    >
-                      <AIcon
-                        type="EditOutlined"
-                      />
-                      {{ $t('device.index.988419-4') }}
-                    </j-permission-button>
-                  </a-menu-item>
+                  
                 </a-menu>
               </template>
             </a-dropdown>
@@ -111,33 +101,11 @@
                     </div>
                   </j-ellipsis>
                 </a-col>
-                <a-col :span="12">
-                  <div class="card-item-content-text">
-                    {{ $t('device.index.988419-5') }}
-                  </div>
-                  <j-ellipsis style="width: calc(100% - 20px);">
-                    <div
-                      style="cursor: pointer"
-                      class="card-item-content-value"
-                    >
-                      {{
-                        table.permissionList.value.length &&
-                        table.getPermissLabel(
-                          slotProps.permission,
-                        )
-                      }}
-                    </div>
-                  </j-ellipsis>
-                </a-col>
+                
               </a-row>
             </template>
             <template #actions>
-              <j-permission-button
-                :hasPermission="`${permission}:assert`"
-                @click="table.clickEdit(slotProps)"
-              >
-                <AIcon type="EditOutlined"/>
-              </j-permission-button>
+              
 
               <j-permission-button
                 :hasPermission="`${permission}:bind`"
@@ -153,12 +121,7 @@
           </CardBox>
         </template>
 
-        <template #permission="slotProps">
-          {{
-            table.permissionList.value.length &&
-            table.getPermissLabel(slotProps.permission)
-          }}
-        </template>
+        
         <template #state="slotProps">
           <JBadgeStatus
             :status="slotProps.state.value"
@@ -205,34 +168,20 @@
         asset-type="device"
         @confirm="table.refresh"
       />
-      <EditPermissionDialog
-        v-if="dialogs.editShow"
-        v-model:visible="dialogs.editShow"
-        :ids="dialogs.selectIds"
-        :permission-list="dialogs.permissList"
-        :parent-id="props.parentId"
-        :all-permission="table.permissionList.value"
-        asset-type="device"
-        :defaultPermission="table.defaultPermission"
-        @confirm="table.refresh"
-      />
+      
     </div>
   </div>
 </template>
 
 <script setup lang="ts" name="device">
 import AddDeviceOrProductDialog from '../components/AddDeviceOrProductDialog.vue';
-import EditPermissionDialog from '../components/EditPermissionDialog.vue';
+
 import {onlyMessage} from '@/utils/comm';
 import {
   getDeviceList_api,
-  getPermission_api,
-  getPermissionDict_api,
   unBindDeviceOrProduct_api,
   getDeviceProduct_api,
-  getBindingsPermission,
 } from '../../../api/department';
-import {intersection} from 'lodash-es';
 
 import type {dictType} from '../typings';
 import {useDepartmentStore} from '@/store/department';
@@ -303,14 +252,7 @@ const columns = [
         }),
     },
   },
-  {
-    title: $t('device.index.988419-5'),
-    dataIndex: 'permission',
-    key: 'permission',
-    ellipsis: true,
-    width: 300,
-    scopedSlots: true,
-  },
+  
   {
     title: $t('device.index.988419-9'),
     dataIndex: 'registryTime',
@@ -359,7 +301,6 @@ const table = {
   defaultPermission: [] as string[],
 
   init: () => {
-    table.getPermissionDict();
     watch(
       () => props.parentId,
       () => {
@@ -377,13 +318,6 @@ const table = {
     else
       return [
         {
-          permission: `${permission}:assert`,
-          key: 'edit',
-          tooltip: {title: $t('device.index.988419-15')},
-          icon: 'EditOutlined',
-          onClick: () => table.clickEdit(data),
-        },
-        {
           permission: `${permission}:bind`,
           key: 'unbind',
           tooltip: {title: $t('device.index.988419-16')},
@@ -395,21 +329,7 @@ const table = {
         },
       ];
   },
-  // 获取权限数据字典
-  getPermissionDict: () => {
-    getPermissionDict_api().then((resp: any) => {
-      table.permissionList.value = resp.result;
-    });
-  },
-  // 获取权限名称
-  getPermissLabel: (values: string[]) => {
-    const permissionList = table.permissionList.value;
-    if (permissionList.length < 1 || values.length < 1) return '';
-    const result = values.map(
-      (key) => permissionList.find((item) => item.id === key)?.name,
-    );
-    return result.join(',');
-  },
+  
   // 选中
   onSelectChange: (row: any) => {
     const selectedRowKeys = table._selectedRowKeys.value;
@@ -477,31 +397,17 @@ const table = {
         };
         const {pageIndex, pageSize, total, data} =
           resp.result as resultType;
-        const ids = data.map((item) => item.id);
-        getPermission_api('device', ids, parentId).then(
-          (perResp: any) => {
-            const permissionObj = {};
-            perResp.result.forEach((item: any) => {
-              permissionObj[item.assetId] =
-                item.grantedPermissions;
-            });
-            data.forEach(
-              (item) =>
-                (item.permission = permissionObj[item.id]),
-            );
-
-            resolve({
-              code: 200,
-              result: {
-                data: data,
-                pageIndex,
-                pageSize,
-                total,
-              },
-              status: 200,
-            });
+        
+        resolve({
+          code: 200,
+          result: {
+            data: data,
+            pageIndex,
+            pageSize,
+            total,
           },
-        );
+          status: 200,
+        });
       });
     }),
   // 整理参数并获取数据
@@ -552,29 +458,8 @@ const table = {
     departmentStore.setType(type);
     dialogs.addShow = true;
   },
-  queryPermissionList: async (ids: string[]) => {
-    const resp: any = await getBindingsPermission('device', ids)
-    if (resp.status === 200) {
-      const arr = resp.result.map((item: any) => {
-        return item?.permissionInfoList?.map((i: any) => i?.id)
-      })
-      return intersection(...arr)
-    }
-    return []
-  },
-  clickEdit: async (row?: any) => {
-    const ids = row ? [row.id] : [...table._selectedRowKeys.value];
-    if (ids.length < 1) return onlyMessage($t('device.index.988419-17'), 'warning');
-
-    table.defaultPermission = row ? row?.permission : intersection(...table.selectedRows.map(
-      (item) => item.permission,
-    )) as string[]
-
-    const _result = await table.queryPermissionList(ids)
-    dialogs.selectIds = ids;
-    dialogs.permissList = _result as string[];
-    dialogs.editShow = true;
-  },
+  
+  
   clickUnBind: (row?: any) => {
     const ids = row ? [row.id] : [...table._selectedRowKeys.value];
     if (ids.length < 1) return onlyMessage($t('device.index.988419-18'), 'warning');
@@ -605,7 +490,6 @@ const dialogs = reactive({
   selectIds: [] as string[],
   permissList: [] as string[],
   addShow: false,
-  editShow: false,
 });
 
 table.init();
