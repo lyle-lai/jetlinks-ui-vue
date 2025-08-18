@@ -6,73 +6,73 @@
       layout="vertical"
       class="basic-form permission-form"
     >
-      <a-form-item v-if="isNoCommunity" name="accessSupport" required>
-        <template #label>
-          <span style="margin-right: 3px">{{ $t('BasicInfo.Permission.040830-0') }}</span>
-          <a-tooltip :title="$t('BasicInfo.Permission.040830-1')">
-            <AIcon
-              type="QuestionCircleOutlined"
-              class="img-style"
-              style="color: #a6a6a6"
-            />
-          </a-tooltip>
-        </template>
-        <a-radio-group
-          v-model:value="formModel.accessSupport"
-          name="radioGroup"
-        >
-          <a-radio value="unsupported">{{ $t('BasicInfo.Permission.040830-2') }}</a-radio>
-          <a-radio value="support">{{ $t('BasicInfo.Permission.040830-3') }}</a-radio>
-          <a-radio value="indirect">
-            <span style="margin-right: 3px">{{ $t('BasicInfo.Permission.040830-4') }}</span>
-            <a-tooltip :title="$t('BasicInfo.Permission.040830-5')">
-              <AIcon type="QuestionCircleFilled" class="img-style" />
-            </a-tooltip>
-          </a-radio>
-        </a-radio-group>
+<!--      <a-form-item v-if="isNoCommunity" name="accessSupport" required>-->
+<!--        <template #label>-->
+<!--          <span style="margin-right: 3px">{{ $t('BasicInfo.Permission.040830-0') }}</span>-->
+<!--          <a-tooltip :title="$t('BasicInfo.Permission.040830-1')">-->
+<!--            <AIcon-->
+<!--              type="QuestionCircleOutlined"-->
+<!--              class="img-style"-->
+<!--              style="color: #a6a6a6"-->
+<!--            />-->
+<!--          </a-tooltip>-->
+<!--        </template>-->
+<!--        <a-radio-group-->
+<!--          v-model:value="formModel.accessSupport"-->
+<!--          name="radioGroup"-->
+<!--        >-->
+<!--          <a-radio value="unsupported">{{ $t('BasicInfo.Permission.040830-2') }}</a-radio>-->
+<!--          <a-radio value="support">{{ $t('BasicInfo.Permission.040830-3') }}</a-radio>-->
+<!--          <a-radio value="indirect">-->
+<!--            <span style="margin-right: 3px">{{ $t('BasicInfo.Permission.040830-4') }}</span>-->
+<!--            <a-tooltip :title="$t('BasicInfo.Permission.040830-5')">-->
+<!--              <AIcon type="QuestionCircleFilled" class="img-style" />-->
+<!--            </a-tooltip>-->
+<!--          </a-radio>-->
+<!--        </a-radio-group>-->
 
-        <a-form-item
-          name="assetType"
-          v-if="formModel.accessSupport === 'support'"
-          :rules="[{ required: true, message: $t('BasicInfo.Permission.040830-6') }]"
-          style="margin-top: 24px; margin-bottom: 0"
-        >
-          <a-select
-            v-model:value="formModel.assetType"
-            style="width: 500px"
-            :placeholder="$t('BasicInfo.Permission.040830-6')"
-            show-search
-            :options="assetsType"
-          >
-          </a-select>
-        </a-form-item>
+<!--        <a-form-item-->
+<!--          name="assetType"-->
+<!--          v-if="formModel.accessSupport === 'support'"-->
+<!--          :rules="[{ required: true, message: $t('BasicInfo.Permission.040830-6') }]"-->
+<!--          style="margin-top: 24px; margin-bottom: 0"-->
+<!--        >-->
+<!--          <a-select-->
+<!--            v-model:value="formModel.assetType"-->
+<!--            style="width: 500px"-->
+<!--            :placeholder="$t('BasicInfo.Permission.040830-6')"-->
+<!--            show-search-->
+<!--            :options="assetsType"-->
+<!--          >-->
+<!--          </a-select>-->
+<!--        </a-form-item>-->
 
-        <a-form-item
-          name="indirectMenus"
-          v-if="formModel.accessSupport === 'indirect'"
-          :rules="[{ required: true, message: $t('BasicInfo.Permission.040830-7') }]"
-          style="margin-top: 24px; margin-bottom: 0"
-        >
-          <a-tree-select
-            v-model:value="formModel.indirectMenus"
-            style="width: 400px"
-            :dropdown-style="{
-              maxHeight: '400px',
-              overflow: 'auto',
-            }"
-            :placeholder="$t('BasicInfo.Permission.040830-7')"
-            multiple
-            show-search
-            :tree-data="treeData"
-            :field-names="{
-              children: 'children',
-              label: 'name',
-              value: 'id',
-            }"
-          >
-          </a-tree-select>
-        </a-form-item>
-      </a-form-item>
+<!--        <a-form-item-->
+<!--          name="indirectMenus"-->
+<!--          v-if="formModel.accessSupport === 'indirect'"-->
+<!--          :rules="[{ required: true, message: $t('BasicInfo.Permission.040830-7') }]"-->
+<!--          style="margin-top: 24px; margin-bottom: 0"-->
+<!--        >-->
+<!--          <a-tree-select-->
+<!--            v-model:value="formModel.indirectMenus"-->
+<!--            style="width: 400px"-->
+<!--            :dropdown-style="{-->
+<!--              maxHeight: '400px',-->
+<!--              overflow: 'auto',-->
+<!--            }"-->
+<!--            :placeholder="$t('BasicInfo.Permission.040830-7')"-->
+<!--            multiple-->
+<!--            show-search-->
+<!--            :tree-data="treeData"-->
+<!--            :field-names="{-->
+<!--              children: 'children',-->
+<!--              label: 'name',-->
+<!--              value: 'id',-->
+<!--            }"-->
+<!--          >-->
+<!--          </a-tree-select>-->
+<!--        </a-form-item>-->
+<!--      </a-form-item>-->
       <a-form-item :label="$t('BasicInfo.Permission.040830-8')" name="permissions">
         <PermissionChoose
           :first-width="3"
@@ -139,9 +139,9 @@ const queryAssetsType = () => {
 
 onMounted(() => {
   queryMenuTree()
-  if(isNoCommunity) {
-    queryAssetsType()
-  }
+  // if(isNoCommunity) {
+  //   queryAssetsType()
+  // }
 })
 
 const onSave = () =>

@@ -126,6 +126,7 @@ const params = {
  */
 let filterProtocolList: any[] = [];
 const getProvidersFn = async () => {
+  return;
   if (!isNoCommunity) {
     return;
   } else {

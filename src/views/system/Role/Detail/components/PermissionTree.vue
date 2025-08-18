@@ -142,14 +142,14 @@ const columns = [
     },
 ];
 
-if(isNoCommunity){
-    columns.push({
-        title: '数据权限',
-        dataIndex: 'data',
-        key: 'data',
-        width: '50%',
-    })
-}
+// if(isNoCommunity){
+//     columns.push({
+//         title: '数据权限',
+//         dataIndex: 'data',
+//         key: 'data',
+//         width: '50%',
+//     })
+// }
 const tableData = ref<tableItemType[]>([]);
 
 // 表头-全选
@@ -445,16 +445,16 @@ function treeToSimple(_treeData: tableItemType[]) {
         flatTableData.push(item);
     });
     // 根据所有权限, 取assetAccesses并集数据
-    if(isNoCommunity){
-        let assets: any[] = [];
-        flatTableData?.forEach((item: any) => {
-            assets = [...assets, ...(item.assetAccesses || [])];
-        });
-        bulkOptions.value = uniqBy(assets, 'supportId')?.map((m: any) => ({
-            label: m.i18nName || m.name,
-            value: m.supportId,
-        }));
-    }
+    // if(isNoCommunity){
+    //     let assets: any[] = [];
+    //     flatTableData?.forEach((item: any) => {
+    //         assets = [...assets, ...(item.assetAccesses || [])];
+    //     });
+    //     bulkOptions.value = uniqBy(assets, 'supportId')?.map((m: any) => ({
+    //         label: m.i18nName || m.name,
+    //         value: m.supportId,
+    //     }));
+    // }
 }
 /**
  * 设置子节点的状态
