@@ -308,7 +308,7 @@ const getProtocol = async () => {
                 key: 'AlarmRecord',
                 tab: $t('Detail.index.478940-16'),
             });
-            if( isNoCommunity ){
+            if( !isNoCommunity ){
                 list.value.push({
                   key: 'Invalid',
                   tab: $t('Detail.index.478940-17')

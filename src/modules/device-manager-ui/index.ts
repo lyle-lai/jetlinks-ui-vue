@@ -19,22 +19,22 @@ const getAsyncRoutesMap = () => {
 
 const getExtraRoutesMap = () => {
     return {
-        // 'device/Product': {
-        //     children: [
-        //         {
-        //             code: 'Detail',
-        //             url: '/detail/:id',
-        //             name: i18n.global.t('device-manager-ui.index.106686-0'),
-        //             component: () => import('./views/device/Product/Detail/index.vue')
-        //         },
-        //         {
-        //             code: 'QuickCreate',
-        //             url: '/QuickCreate',
-        //             name: i18n.global.t('device-manager-ui.index.106686-1'),
-        //             component: () => import('./views/resource/QuickCreate/index.vue')
-        //         }
-        //     ]
-        // },
+        'device/Product': {
+            children: [
+                {
+                    code: 'Detail',
+                    url: '/detail/:id',
+                    name: i18n.global.t('device-manager-ui.index.106686-0'),
+                    component: () => import('./views/device/Product/Detail/index.vue')
+                },
+                {
+                    code: 'QuickCreate',
+                    url: '/QuickCreate',
+                    name: i18n.global.t('device-manager-ui.index.106686-1'),
+                    component: () => import('./views/resource/QuickCreate/index.vue')
+                }
+            ]
+        },
         'device/Instance': {
             children: [
                 {

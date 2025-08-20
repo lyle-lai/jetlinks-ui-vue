@@ -1185,6 +1185,95 @@ export default [
                 accessSupport: {text: "不支持", value: "unsupported"},
                 supportDataAccess: false
             },
+                            name: '开放平台',
+                i18nMessages: {
+                    name: {
+                        zh_CN: "开放平台",
+                        en_US: "Open Platform",
+                        en: "Open Platform"
+                    }
+                },
+                owner: 'iot',
+                id: 'system-open-platform',
+                sortIndex: 10.5,
+                url: '/system/OpenPlatform',
+                icon: 'icon-api',
+                showPage: ['application'],
+                permissions: [],
+                buttons: [
+                    {
+                        id: 'view',
+                        name: '查看',
+                        permissions: [ { permission: 'application', actions: ['query'] } ]
+                    },
+                    {
+                        id: 'add',
+                        name: '新增',
+                        permissions: [ { permission: 'application', actions: ['save'] } ]
+                    },
+                    {
+                        id: 'update',
+                        name: '编辑',
+                        permissions: [ { permission: 'application', actions: ['save'] } ]
+                    },
+                    {
+                        id: 'delete',
+                        name: '删除',
+                        permissions: [ { permission: 'application', actions: ['delete'] } ]
+                    },
+                    {
+                        id: 'action',
+                        name: '启/禁用',
+                        permissions: [ { permission: 'application', actions: ['save'] } ]
+                    }
+                ],
+                accessSupport: {text: "不支持", value: "unsupported"},
+                supportDataAccess: false,
+                children: [
+                    {
+                        code: 'system/OpenPlatform/Save',
+                        name: '开放平台保存',
+                        i18nMessages: {
+                            name: {
+                                zh_CN: "开放平台保存",
+                                en_US: "Open Platform Save",
+                                en: "Open Platform Save"
+                            }
+                        },
+                        owner: 'iot',
+                        id: 'system-open-platform-save',
+                        url: '/system/OpenPlatform/Save',
+                        options: {
+                            show: false
+                        },
+                        showPage: ['application'],
+                        permissions: [],
+                        accessSupport: {text: "不支持", value: "unsupported"},
+                        supportDataAccess: false
+                    }
+                ]
+            },
+            {
+                code: 'system/OpenPlatform/Save',
+                name: '开放平台保存',
+                i18nMessages: {
+                    name: {
+                        zh_CN: "开放平台保存",
+                        en_US: "Open Platform Save",
+                        en: "Open Platform Save"
+                    }
+                },
+                owner: 'iot',
+                id: 'system-open-platform-save',
+                url: '/system/OpenPlatform/Save',
+                options: {
+                    show: false
+                },
+                showPage: ['open-platform'],
+                permissions: [],
+                accessSupport: {text: "不支持", value: "unsupported"},
+                supportDataAccess: false
+            },
             {
                 code: 'system/NoticeRule',
                 name: '订阅管理',

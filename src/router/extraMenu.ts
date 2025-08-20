@@ -37,6 +37,13 @@ export const getExtraRouters = () => {
         name: i18n.global.t('Apply.index.483342-19')
       },
     ],
+    'system/OpenPlatform': [
+      {
+        code: 'Save',
+        url: '/Save',
+        name: '编辑应用'
+      }
+    ],
     'system/Positions': [
       {
         code: 'Detail',
