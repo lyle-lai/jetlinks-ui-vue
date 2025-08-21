@@ -13,8 +13,8 @@
             <a-form-item label="回调地址" name="callbackUrl" :rules="[{ type: 'url', message: '请输入正确的URL' }]">
                 <a-input v-model:value="formData.callbackUrl" placeholder="请输入回调地址" />
             </a-form-item>
-            <a-form-item label="授权类型" name="authType" :rules="[{ required: true, message: '请选择授权类型' }]">
-                <a-checkbox-group v-model:value="formData.authType">
+            <a-form-item label="授权类型" name="authorizationTypes" :rules="[{ required: true, message: '请选择授权类型' }]">
+                <a-checkbox-group v-model:value="formData.authorizationTypes">
                     <a-checkbox value="api">API调用授权</a-checkbox>
                     <a-checkbox value="websocket">WebSocket授权</a-checkbox>
                 </a-checkbox-group>
@@ -22,37 +22,6 @@
             <a-form-item label="应用描述" name="description">
                 <a-textarea v-model:value="formData.description" placeholder="请输入应用描述" :rows="3" />
             </a-form-item>
-
-            <template v-if="isEdit">
-                <a-divider />
-                <h3>应用凭证</h3>
-                <h3>应用凭证</h3>
-            <a-form-item label="App ID">
-                <a-input-group compact>
-                    <a-input :value="formData.appId" readonly />
-                    <a-button @click="copy(formData.appId, 'App ID')">复制</a-button>
-                </a-input-group>
-            </a-form-item>
-            <a-form-item label="App Key">
-                <a-input-group compact>
-                    <a-input :value="formData.appKey" readonly placeholder="编辑时此处不回显" />
-                    <a-button @click="copy(formData.appKey, 'App Key')">复制</a-button>
-                </a-input-group>
-            </a-form-item>
-            <a-form-item label="App Secret">
-                <a-input-password :value="formData.appSecret" readonly placeholder="••••••••">
-                    <template #addonAfter>
-                        <a-space>
-                            <a-button type="link" @click="copy(formData.appSecret, 'App Secret')" :disabled="!formData.appSecret">复制</a-button>
-                            <a-button type="link" @click="resetSecret">重置</a-button>
-                        </a-space>
-                    </template>
-                </a-input-password>
-                <div class="ant-form-item-extra">
-                    出于安全考虑，应用凭证仅在创建和重置时可见，请妥善保存。
-                </div>
-            </a-form-item>
-            </template>
 
             <a-form-item :wrapper-col="{ span: 24 }" style="text-align: center; margin-top: 24px;">
                 <a-button type="primary" @click="handleSave" :loading="loading">保存</a-button>
@@ -80,15 +49,27 @@ const formData = ref<Partial<OpenPlatformItem>>({});
 
 const isEdit = computed(() => !!props.id);
 
-onMounted(() => {
-    if (props.id) {
-        getById(props.id).then(resp => {
-            if (resp.success) {
-                formData.value = resp.result;
-            }
-        });
-    }
-});
+watch(
+    () => props.id,
+    (newId) => {
+        if (newId) {
+            getById(newId).then(resp => {
+                if (resp.success) {
+                    formData.value = resp.result;
+                } else {
+                    console.error('Failed to fetch data for ID:', newId, resp);
+                    onlyMessage('加载数据失败', 'error'); // Add user-friendly message
+                }
+            }).catch(error => {
+                console.error('API call getById failed:', error);
+                onlyMessage('加载数据时发生错误', 'error'); // Add user-friendly message
+            });
+        } else {
+            formData.value = {}; // Clear form for new entry if ID is null/undefined
+        }
+    },
+    { immediate: true }
+);
 
 const handleSave = async () => {
     try {
@@ -97,7 +78,7 @@ const handleSave = async () => {
         const api = isEdit.value ? update(props.id, formData.value) : add(formData.value);
         const resp = await api;
         if (resp.success) {
-            onlyMessage.success('保存成功');
+            onlyMessage('保存成功', 'success');
             if (!isEdit.value) {
                 emit('created', resp.result.id);
             }
@@ -113,33 +94,5 @@ const handleCancel = () => {
     router.back();
 }
 
-const copy = (value: string, type: string) => {
-    if (!value) {
-        onlyMessage(`${type} 为空`, 'warning');
-        return;
-    }
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(value).then(() => {
-            onlyMessage('复制成功');
-        }).catch(err => {
-            console.error('Could not copy text: ', err);
-            onlyMessage('复制失败', 'error');
-        });
-    } else {
-        onlyMessage('浏览器不支持剪贴板API', 'error');
-    }
-}
-
-const resetSecret = () => {
-    Modal.confirm({
-        title: '确认重置？',
-        content: '重置后，旧的App Secret将立即失效，请及时更新您的应用配置。',
-        onOk: () => {
-            // Call API to reset secret
-            console.log('Resetting secret...');
-            onlyMessage.success('重置成功');
-        }
-    })
-};
 
 </script>

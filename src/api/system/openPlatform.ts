@@ -18,10 +18,10 @@ export const update = (id: string, data: any) => request.put(`${baseUrl}/${id}`,
 export const save = (data: any) => request.patch(baseUrl, data);
 
 // 根据ID删除
-export const remove = (id: string) => request.delete(`${baseUrl}/${id}`);
+export const remove = (id: string) => request.remove(`${baseUrl}/${id}`);
 
 // 启用
-export const enable = (id: string) => request.post(`${baseUrl}/${id}/_enable`);
+export const enable = (id: string) => request.put(`${baseUrl}/${id}/_enable`);
 
 // 禁用
-export const disable = (id: string) => request.post(`${baseUrl}/${id}/_disable`);
+export const disable = (id: string) => request.put(`${baseUrl}/${id}/_disable`);

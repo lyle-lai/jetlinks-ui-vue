@@ -2,21 +2,16 @@ export interface OpenPlatformItem {
     id: string;
     name: string;
     ownerName?: string;
-    state: {
+    status: {
         text: string;
         value: 'enabled' | 'disabled';
     };
     appKey?: string;
     appSecret?: string;
-    authType: ('api' | 'websocket')[];
+    authorizationTypes: ('api' | 'websocket')[];
+    contactPerson?: string;
     callbackUrl?: string;
-    deviceAccess?: {
-        mode: 'blacklist' | 'whitelist';
-        rules: any[]; // Replace with specific rule type
-    };
-    apiConfig?: {
-        apis: any[]; // Replace with specific API config type
-    }
+    description?: string;
 }
 
 export interface ApiInfo {

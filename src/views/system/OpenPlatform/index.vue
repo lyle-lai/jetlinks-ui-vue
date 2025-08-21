@@ -33,8 +33,8 @@
                             :value="slotProps"
                             :actions="table.getActions(slotProps)"
                             v-bind="slotProps"
-                            :status="slotProps.state?.value"
-                            :statusText="slotProps.state?.text"
+                            :status="slotProps.status === 1 ? 'enabled' : 'disabled'"
+                            :statusText="slotProps.status === 1 ? '正常' : '禁用'"
                             :statusNames="{
                                 enabled: 'processing',
                                 disabled: 'error',
@@ -60,9 +60,9 @@
                                         <div class="card-item-content-text">
                                             App ID
                                         </div>
-                                        <div>
+                                        <j-ellipsis>
                                             {{ slotProps.id }}
-                                        </div>
+                                        </j-ellipsis>
                                     </a-col>
                                     <a-col :span="12">
                                         <div class="card-item-content-text">
@@ -90,8 +90,8 @@
                     </template>
                     <template #state="slotProps">
                         <j-badge-status
-                            :status="slotProps.state.value"
-                            :text="slotProps.state.text"
+                            :status="slotProps.status === 1 ? 'enabled' : 'disabled'"
+                            :text="slotProps.status === 1 ? '正常' : '禁用'"
                             :statusNames="{
                                 enabled: 'processing',
                                 disabled: 'error',
@@ -117,11 +117,11 @@
                 </j-pro-table>
             </FullPage>
         </div>
-        <j-modal v-model:visible="certificateVisible" title="查看凭证">
-            <p>App ID: {{ currentApp.id }} <j-button type="link" @click="copyToClipboard(currentApp.id)">复制</j-button></p>
-            <p>App Key: {{ currentApp.appKey }} <j-button type="link" @click="copyToClipboard(currentApp.appKey)">复制</j-button></p>
-            <p>App Secret: {{ currentApp.appSecret }} <j-button type="link" @click="copyToClipboard(currentApp.appSecret)">复制</j-button></p>
-        </j-modal>
+                <CertificateModal
+            v-if="certificateVisible"
+            :data="currentApp"
+            @close="certificateVisible = false"
+        />
     </j-page-container>
 </template>
 
@@ -129,6 +129,8 @@
 import { ref } from 'vue';
 import { useMenuStore } from '@/store/menu';
 import { query, enable, disable, remove } from '@/api/system/openPlatform';
+import CertificateModal from './components/CertificateModal.vue';
+import { onlyMessage } from '@/utils/comm';
 
 const menuStory = useMenuStore();
 const permission = 'system/OpenPlatform';
@@ -141,7 +143,7 @@ const columns = [
     { title: '应用名称', dataIndex: 'name', key: 'name', search: { type: 'string' } },
     { title: 'App ID', dataIndex: 'id', key: 'id', search: { type: 'string' } },
     { title: '归属单位', dataIndex: 'ownerName', key: 'ownerName', search: { type: 'string' } },
-    { title: '状态', dataIndex: 'state', key: 'state', search: { type: 'select', options: [{ label: '正常', value: 'enabled' }, { label: '禁用', value: 'disabled' }] } },
+    { title: '状态', dataIndex: 'status', key: 'status', search: { type: 'select', options: [{ label: '正常', value: 1 }, { label: '禁用', value: 0 }] } },
     { title: '操作', key: 'action', width: '200px', fixed: 'right' },
 ];
 
@@ -149,11 +151,7 @@ const queryList = (params: any) => {
     return query(params);
 };
 
-const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-        onlyMessage('复制成功');
-    });
-};
+
 
 const table = {
     refresh: () => tableRef.value.reload(),
@@ -164,7 +162,7 @@ const table = {
         menuStory.jumpPage('system/OpenPlatform/Save', { query: { id } });
     },
     handleState: (record: any) => {
-        const action = record.state.value === 'enabled' ? disable : enable;
+        const action = record.status === 1 ? disable : enable;
         action(record.id).then(resp => {
             if (resp.success) {
                 onlyMessage('操作成功');
@@ -186,7 +184,7 @@ const table = {
     },
     getActions: (data: Partial<Record<string, any>>, type: 'card' | 'table' = 'card') => {
         if (!data) return [];
-        const state = data.state?.value;
+        const status = data.status; // Use data.status directly (0 or 1)
         const actions = [
             {
                 permission: `${permission}:update`,
@@ -199,24 +197,24 @@ const table = {
             {
                 permission: `${permission}:action`,
                 key: 'action',
-                text: state === 'enabled' ? '禁用' : '启用',
-                tooltip: { title: state === 'enabled' ? '禁用' : '启用' },
+                text: status === 1 ? '禁用' : '启用', // 1 for enabled, 0 for disabled
+                tooltip: { title: status === 1 ? '禁用' : '启用' },
                 popConfirm: {
-                    title: `确认${state === 'enabled' ? '禁用' : '启用'}`,
+                    title: `确认${status === 1 ? '禁用' : '启用'}`,
                     onConfirm: () => table.handleState(data),
                 },
-                icon: state === 'enabled' ? 'StopOutlined' : 'PlayCircleOutlined',
+                icon: status === 1 ? 'StopOutlined' : 'PlayCircleOutlined',
             },
             {
                 permission: `${permission}:delete`,
                 key: 'delete',
                 text: '删除',
-                tooltip: { title: state === 'enabled' ? '请先禁用再删除' : '删除' },
+                tooltip: { title: status === 1 ? '请先禁用再删除' : '删除' },
                 popConfirm: {
                     title: '确认删除？',
                     onConfirm: () => table.handleDelete(data.id),
                 },
-                disabled: state === 'enabled',
+                disabled: status === 1, // Disable delete if status is 1 (enabled)
                 icon: 'DeleteOutlined',
             },
             {
