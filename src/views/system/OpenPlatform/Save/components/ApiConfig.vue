@@ -1,35 +1,44 @@
 <template>
     <div>
-        <j-button type="primary" @click="showApiSelectModal">从Swagger导入</j-button>
-        <j-button @click="addApiManually">手动添加API</j-button>
+        <a-form layout="vertical">
+            <j-button type="primary" @click="showApiSelectModal">从Swagger导入</j-button>
+            <j-button @click="addApiManually" style="margin-left: 8px">手动添加API</j-button>
 
-        <a-table :columns="columns" :data-source="formData.apis" row-key="path" style="margin-top: 16px;">
-            <template #bodyCell="{ column, record }">
-                <template v-if="column.key === 'limit'">
-                    <a-input v-model:value="record.limit" placeholder="例如: 60次/分钟" />
+            <a-table :columns="columns" :data-source="formData.apis" row-key="path" style="margin-top: 16px;">
+                <template #bodyCell="{ column, record }">
+                    <template v-if="column.key === 'limit'">
+                        <a-input v-model:value="record.limit" placeholder="例如: 60次/分钟" />
+                    </template>
+                    <template v-if="column.key === 'needSignature'">
+                        <a-switch v-model:checked="record.needSignature" />
+                    </template>
+                    <template v-if="column.key === 'action'">
+                        <j-button type="link" @click="removeApi(record.path)">移除</j-button>
+                    </template>
                 </template>
-                <template v-if="column.key === 'needSignature'">
-                    <a-switch v-model:checked="record.needSignature" />
-                </template>
-                <template v-if="column.key === 'action'">
-                    <j-button type="link" @click="removeApi(record.path)">移除</j-button>
-                </template>
-            </template>
-        </a-table>
+            </a-table>
+
+            <a-form-item :wrapper-col="{ span: 24 }" style="text-align: center; margin-top: 24px;">
+                <a-button type="primary" @click="handleSave" :loading="loading">保存</a-button>
+                <a-button style="margin-left: 8px" @click="loadData">重置</a-button>
+            </a-form-item>
+        </a-form>
 
         <ApiSelectModal v-model:visible="apiSelectModalVisible" @select="handleApiSelect" />
     </div>
 </template>
 
 <script setup lang="ts" name="OpenPlatformApiConfig">
-import { ref, watch, defineProps, defineEmits } from 'vue';
+import { ref, watch } from 'vue';
 import ApiSelectModal from './ApiSelectModal.vue';
 import type { ApiInfo } from '../../typing.d.ts';
+import { getApiConfig, saveApiConfig } from '@/api/system/openPlatform'; // 假设的API
+import { onlyMessage } from '@/utils/comm';
 
-const props = defineProps<{ modelValue: any }>();
-const emit = defineEmits(['update:modelValue']);
+const props = defineProps<{ id: string }>();
 
-const formData = ref({
+const loading = ref(false);
+const formData = ref<any>({
     apis: []
 });
 const apiSelectModalVisible = ref(false);
@@ -42,15 +51,39 @@ const columns = [
     { title: '操作', key: 'action' },
 ];
 
-watch(() => props.modelValue, (newData) => {
-    if (newData) {
-        formData.value = newData;
+const loadData = () => {
+    if (props.id) {
+        // loading.value = true;
+        // getApiConfig(props.id).then(resp => {
+        //     if (resp.success) {
+        //         formData.value = resp.result;
+        //     }
+        // }).finally(() => {
+        //     loading.value = false;
+        // });
+        // 模拟数据
+        formData.value = { apis: [] };
     }
-}, { immediate: true, deep: true });
+}
 
-watch(formData, (newData) => {
-    emit('update:modelValue', newData);
-}, { deep: true });
+watch(() => props.id, () => {
+    loadData();
+}, { immediate: true });
+
+const handleSave = async () => {
+    loading.value = true;
+    try {
+        // const resp = await saveApiConfig(props.id, formData.value);
+        // if (resp.success) {
+        //     onlyMessage.success('保存成功');
+        // }
+        onlyMessage.success('保存成功（模拟）');
+    } catch (err) {
+        console.error(err);
+    } finally {
+        loading.value = false;
+    }
+}
 
 const showApiSelectModal = () => {
     apiSelectModalVisible.value = true;
