@@ -16,6 +16,9 @@
 
             <a-table :columns="columns" :data-source="formData.rules" row-key="id" style="margin-top: 16px;">
                 <template #bodyCell="{ column, record }">
+                    <template v-if="column.key === 'type'">
+                        {{ getRuleTypeText(record.type) }}
+                    </template>
                     <template v-if="column.key === 'action'">
                         <j-button type="link" @click="removeRule(record.id)">移除</j-button>
                     </template>
@@ -29,10 +32,10 @@
         </a-form>
 
         <!-- 添加授权规则弹窗 -->
-        <j-modal v-model:visible="addRuleModalVisible" title="添加授权规则" @ok="handleAddRule">
-            <p>在这里选择授权类型（设备、产品、科室组）并搜索添加资源。</p>
-            <!-- Resource selection form will go here -->
-        </j-modal>
+        <AddDeviceAccessRuleModal
+            v-model:visible="addDeviceAccessRuleModalVisible"
+            @select="handleAddRule"
+        />
     </div>
 </template>
 
@@ -40,22 +43,32 @@
 import { ref, watch } from 'vue';
 import { getDeviceAccess, saveDeviceAccess } from '@/api/system/openPlatform'; // 假设的API
 import { onlyMessage } from '@/utils/comm';
+import AddDeviceAccessRuleModal from './AddDeviceAccessRuleModal.vue'; // Import the new modal
 
 const props = defineProps<{ id: string }>();
 
 const loading = ref(false);
-const formData = ref<any>({ // 后面用具体类型替换
+const formData = ref<any>({
     mode: 'whitelist',
     rules: []
 });
-const addRuleModalVisible = ref(false);
+const addDeviceAccessRuleModalVisible = ref(false); // Renamed
 
 const columns = [
     { title: '类型', dataIndex: 'type', key: 'type' },
     { title: '资源名称', dataIndex: 'name', key: 'name' },
-    { title: '添加时间', dataIndex: 'createTime', key: 'createTime' },
+    { title: '资源ID', dataIndex: 'id', key: 'id' }, // Added resource ID
     { title: '操作', key: 'action' },
 ];
+
+const getRuleTypeText = (type: string) => {
+  switch (type) {
+    case 'device': return '设备';
+    case 'product': return '产品';
+    case 'organization': return '组织';
+    default: return type;
+  }
+};
 
 const loadData = () => {
     if (props.id) {
@@ -92,12 +105,22 @@ const handleSave = async () => {
 }
 
 const showAddRuleModal = () => {
-    addRuleModalVisible.value = true;
+    addDeviceAccessRuleModalVisible.value = true;
 };
 
-const handleAddRule = () => {
-    // Logic to add selected resource to rules list
-    addRuleModalVisible.value = false;
+const handleAddRule = (selectedRules: any[]) => {
+    selectedRules.forEach(newRule => {
+        const exists = formData.value.rules.some((rule: any) => rule.id === newRule.id && rule.type === newRule.type);
+        if (!exists) {
+            formData.value.rules.push({
+                id: newRule.id,
+                type: newRule.type,
+                name: newRule.name || newRule.id,
+                createTime: new Date().toLocaleString()
+            });
+        }
+    });
+    addDeviceAccessRuleModalVisible.value = false;
 };
 
 const removeRule = (id: string) => {
