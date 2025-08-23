@@ -35,6 +35,8 @@
         <AddDeviceAccessRuleModal
             v-if="addDeviceAccessRuleModalVisible"
             v-model:visible="addDeviceAccessRuleModalVisible"
+            :app-id="id"
+            :mode="currentMode"
             @select="handleAddRule"
         />
     </div>

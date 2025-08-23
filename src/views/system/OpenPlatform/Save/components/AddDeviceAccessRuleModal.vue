@@ -1,39 +1,99 @@
 <template>
-  <a-modal :visible="visible" :title="title" @ok="handleOk" @cancel="handleCancel" width="1000px">
+  <a-modal :visible="visible" title="添加授权规则" @ok="handleOk" @cancel="handleCancel" width="1000px">
     <a-tabs v-model:activeKey="activeTab">
       <a-tab-pane key="DEVICE" tab="设备">
-        <pro-search type="simple" :columns="deviceColumns" @search="onDeviceSearch" />
-        <j-pro-table
-          ref="deviceTableRef"
-          :columns="deviceColumns"
-          :request="queryDevices"
-          :params="deviceQueryParams"
-          :rowSelection="{ selectedRowKeys: selectedDeviceKeys, onSelect: onSelectDevice, onSelectAll: onSelectAllDevices }"
-        />
+        <div class="list-wrapper">
+          <pro-search type="simple" :columns="deviceColumns" @search="onDeviceSearch" />
+          <j-pro-table
+            ref="deviceTableRef"
+            modeValue="CARD"
+            :columns="deviceColumns"
+            :request="queryDevicesApi"
+            :params="deviceFinalParams"
+            :rowSelection="{ selectedRowKeys: selectedDeviceKeys, onSelect: onSelectDevice, onSelectAll: onSelectAllDevices }"
+          >
+            <template #card="slotProps">
+              <CardBox
+                  :value="slotProps"
+                  :active="selectedDeviceKeys.includes(slotProps.id)"
+                  :show-status="false"
+                  :actions="[]"
+                  @click="onSelectDevice(slotProps, !selectedDeviceKeys.includes(slotProps.id))"
+              >
+                  <template #img>
+                      <img :src="deviceIcon" />
+                  </template>
+                  <template #content>
+                      <div class="card-item-heard-name">
+                          <j-ellipsis>{{ slotProps.name }}</j-ellipsis>
+                      </div>
+                      <div class="card-item-content-text">
+                          ID: {{ slotProps.id }}
+                      </div>
+                  </template>
+              </CardBox>
+            </template>
+          </j-pro-table>
+        </div>
       </a-tab-pane>
       <a-tab-pane key="PRODUCT" tab="产品">
-        <pro-search type="simple" :columns="productColumns" @search="onProductSearch" />
-        <j-pro-table
-          ref="productTableRef"
-          :columns="productColumns"
-          :request="queryProducts"
-          :params="productQueryParams"
-          :rowSelection="{ selectedRowKeys: selectedProductKeys, onSelect: onSelectProduct, onSelectAll: onSelectAllProducts }"
-        />
+        <div class="list-wrapper">
+          <pro-search type="simple" :columns="productColumns" @search="onProductSearch" />
+          <j-pro-table
+            ref="productTableRef"
+            modeValue="CARD"
+            :columns="productColumns"
+            :request="queryProductsApi"
+            :params="productFinalParams"
+            :rowSelection="{ selectedRowKeys: selectedProductKeys, onSelect: onSelectProduct, onSelectAll: onSelectAllProducts }"
+          >
+            <template #card="slotProps">
+              <CardBox
+                  :value="slotProps"
+                  :active="selectedProductKeys.includes(slotProps.id)"
+                  :show-status="false"
+                  :actions="[]"
+                  @click="onSelectProduct(slotProps, !selectedProductKeys.includes(slotProps.id))"
+              >
+                  <template #img>
+                      <img :src="productIcon" />
+                  </template>
+                  <template #content>
+                      <div class="card-item-heard-name">
+                          <j-ellipsis>{{ slotProps.name }}</j-ellipsis>
+                      </div>
+                      <div class="card-item-content-text">
+                          ID: {{ slotProps.id }}
+                      </div>
+                  </template>
+              </CardBox>
+            </template>
+          </j-pro-table>
+        </div>
       </a-tab-pane>
       <a-tab-pane key="ORGANIZATION" tab="组织">
-        <pro-search type="simple" :columns="organizationColumns" @search="onOrganizationSearch" />
-        <j-pro-table
-          ref="organizationTableRef"
-          :columns="organizationColumns"
-          :request="queryOrganizations"
-          :params="organizationQueryParams"
-          :rowSelection="{ selectedRowKeys: selectedOrganizationKeys, onSelect: onSelectOrganization, onSelectAll: onSelectAllOrganizations }"
-        />
+        <div class="list-wrapper">
+          <pro-search type="simple" :columns="organizationColumns" @search="onOrganizationSearch" />
+          <a-table
+              :loading="organizationLoading"
+              :columns="organizationColumns"
+              :data-source="organizationData"
+              :row-selection="{ selectedRowKeys: selectedOrganizationKeys, onSelect: onSelectOrganization, onSelectAll: onSelectAllOrganizations }"
+              :pagination="false"
+              row-key="id"
+          />
+        </div>
       </a-tab-pane>
     </a-tabs>
   </a-modal>
 </template>
+
+<style lang="less" scoped>
+.list-wrapper {
+  height: 600px; // or a calculated height
+  overflow-y: auto;
+}
+</style>
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
@@ -43,7 +103,16 @@ import {
   getDeviceProduct_api as queryProductsApi
 } from '@/api/system/department';
 import { onlyMessage } from '@/utils/comm';
-const props = defineProps<{ visible: boolean }>();
+import CardBox from '@/components/CardBox/index.vue';
+import deviceIcon from '@/assets/device-product.png';
+import productIcon from '@/assets/device-product.png';
+import { ArrayToTree } from '@/views/system/Department/util';
+
+const props = defineProps<{ 
+    visible: boolean, 
+    appId: string,
+    mode: 'WHITELIST' | 'BLACKLIST'
+}>();
 const emit = defineEmits(['update:visible', 'select']);
 
 const activeTab = ref('DEVICE');
@@ -70,17 +139,37 @@ const getSelectedKeysForTab = (type: string) => {
   return keys;
 };
 
+const getQueryColumn = (resourceType: 'device' | 'product' | 'organization') => {
+    const operator = 'in';
+    const dimension = 'open-platform-asset';
+    const notFlag = 'not';
+    const resource = resourceType.toLowerCase();
+    const mode = props.mode.toLowerCase();
+    return 'id$' + operator + '-' + dimension + '$' + notFlag + '$' + resource + '$' + mode;
+};
+
+const createFinalParams = (searchParams: any, resourceType: 'device' | 'product' | 'organization') => {
+    return {
+        ...searchParams,
+        terms: [
+            ...(searchParams.terms || []),
+            {
+                column: getQueryColumn(resourceType),
+                value: props.appId,
+                type: 'and'
+            }
+        ]
+    };
+};
+
 // Device related
-const deviceQueryParams = ref({});
+const deviceSearchParams = ref({});
+const deviceFinalParams = computed(() => createFinalParams(deviceSearchParams.value, 'device'));
 const deviceColumns = [
   { title: '设备名称', dataIndex: 'name', key: 'name', search: { type: 'string' } },
   { title: '设备ID', dataIndex: 'id', key: 'id', search: { type: 'string' } },
 ];
-const queryDevices = async (params: any) => {
-  const resp = await queryDevicesApi(params);
-  return resp;
-};
-const onDeviceSearch = (e: any) => { deviceQueryParams.value = e; };
+const onDeviceSearch = (e: any) => { deviceSearchParams.value = e; };
 const onSelectDevice = (record: any, selected: boolean) => {
   updateSelectedItems(record, selected, 'DEVICE');
 };
@@ -93,16 +182,13 @@ const selectedDeviceKeys = computed(() => getSelectedKeysForTab('DEVICE'));
 
 
 // Product related
-const productQueryParams = ref({});
+const productSearchParams = ref({});
+const productFinalParams = computed(() => createFinalParams(productSearchParams.value, 'product'));
 const productColumns = [
   { title: '产品名称', dataIndex: 'name', key: 'name', search: { type: 'string' } },
   { title: '产品ID', dataIndex: 'id', key: 'id', search: { type: 'string' } },
 ];
-const queryProducts = async (params: any) => {
-  const resp = await queryProductsApi(params);
-  return resp;
-};
-const onProductSearch = (e: any) => { productQueryParams.value = e; };
+const onProductSearch = (e: any) => { productSearchParams.value = e; };
 const onSelectProduct = (record: any, selected: boolean) => {
   updateSelectedItems(record, selected, 'PRODUCT');
 };
@@ -115,32 +201,75 @@ const selectedProductKeys = computed(() => getSelectedKeysForTab('PRODUCT'));
 
 
 // Organization related
-const organizationQueryParams = ref({});
+const organizationSearchParams = ref({});
+const organizationFinalParams = computed(() => createFinalParams(organizationSearchParams.value, 'organization'));
 const organizationColumns = [
   { title: '组织名称', dataIndex: 'name', key: 'name', search: { type: 'string' } },
   { title: '组织ID', dataIndex: 'id', key: 'id', search: { type: 'string' } },
 ];
-const queryOrganizations = async (params: any) => {
-  const resp = await queryOrganizationsApi({ ...params, paging: false });
-  if (resp.success) {
-    return {
-      result: {
-        data: resp.result,
-        pageIndex: 0,
-        pageSize: resp.result.length,
-        total: resp.result.length,
-      }
-    };
-  }
-  return { result: { data: [], pageIndex: 0, pageSize: 0, total: 0 } };
+const onOrganizationSearch = (e: any) => { organizationSearchParams.value = e; };
+
+const organizationLoading = ref(false);
+const organizationData = ref<any[]>([]);
+
+const fetchOrganizations = async () => {
+    organizationLoading.value = true;
+    try {
+        const resp = await queryOrganizationsApi({ ...organizationFinalParams.value, paging: false });
+        if (resp.success) {
+            organizationData.value = ArrayToTree(resp.result || []);
+        } else {
+            organizationData.value = [];
+        }
+    } catch (e) {
+        organizationData.value = [];
+    } finally {
+        organizationLoading.value = false;
+    }
 };
-const onOrganizationSearch = (e: any) => { organizationQueryParams.value = e; };
+
+watch([() => props.visible, organizationFinalParams], () => {
+    if (props.visible && activeTab.value === 'ORGANIZATION') {
+        fetchOrganizations();
+    }
+}, { immediate: true, deep: true });
+
+watch(activeTab, (newTab) => {
+    if (newTab === 'ORGANIZATION' && props.visible) {
+        fetchOrganizations();
+    }
+});
+
 const onSelectOrganization = (record: any, selected: boolean) => {
-  updateSelectedItems(record, selected, 'ORGANIZATION');
+  const allRecordsToChange: any[] = [];
+  const collectRecords = (node: any) => {
+      if (!node) return;
+      allRecordsToChange.push(node);
+      if (node.children && node.children.length > 0) {
+          node.children.forEach(collectRecords);
+      }
+  };
+  collectRecords(record);
+
+  allRecordsToChange.forEach(rec => {
+      updateSelectedItems(rec, selected, 'ORGANIZATION');
+  });
 };
-const onSelectAllOrganizations = (selected: boolean, _: any[], changeRows: any) => {
-  changeRows.forEach((item: any) => {
-    updateSelectedItems(item, selected, 'ORGANIZATION');
+
+const onSelectAllOrganizations = (selected: boolean) => {
+  const allRecords: any[] = [];
+  const collectAll = (nodes: any[]) => {
+      for (const node of nodes) {
+          allRecords.push(node);
+          if (node.children) {
+              collectAll(node.children);
+          }
+      }
+  };
+  collectAll(organizationData.value);
+
+  allRecords.forEach(item => {
+      updateSelectedItems(item, selected, 'ORGANIZATION');
   });
 };
 const selectedOrganizationKeys = computed(() => getSelectedKeysForTab('ORGANIZATION'));
@@ -166,9 +295,9 @@ watch(() => props.visible, (newVal) => {
   if (newVal) {
     activeTab.value = 'DEVICE';
     selectedItemsMap.value.clear();
-    deviceQueryParams.value = {};
-    productQueryParams.value = {};
-    organizationQueryParams.value = {};
+    deviceSearchParams.value = {};
+    productSearchParams.value = {};
+    organizationSearchParams.value = {};
   }
 });
 </script>

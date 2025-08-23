@@ -11,9 +11,9 @@ export const delDepartment_api = (id: string) => request.remove(`/organization/$
 
 
 // 获取所属产品列表
-export const getDeviceProduct_api = (data: object) => request.get(`/device/product/_query/no-paging`, data);
+export const getDeviceProduct_api = (data: object) => request.post(`/device-product/_query`, data);
 // 获取产品列表
-export const getDeviceOrProductList_api = (data: object) => request.post(`/device-product/_query`, data);
+// export const getDeviceOrProductList_api = (data: object) => request.post(`/device-product/_query`, data);
 // 获取设备列表
 export const getDeviceList_api = (data: object) => request.post(`/device/instance/_query`, data);
 // 根据产品的id获取产品的权限
