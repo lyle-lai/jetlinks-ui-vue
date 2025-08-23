@@ -13,7 +13,7 @@
                         <a-switch v-model:checked="record.needSignature" />
                     </template>
                     <template v-if="column.key === 'action'">
-                        <j-button type="link" @click="removeApi(record.path)">移除</j-button>
+                        <a-button type="link" @click="removeApi(record.path)">移除</a-button>
                     </template>
                 </template>
             </a-table>
@@ -77,7 +77,7 @@ const handleSave = async () => {
         // if (resp.success) {
         //     onlyMessage.success('保存成功');
         // }
-        onlyMessage.success('保存成功（模拟）');
+        onlyMessage('保存成功（模拟）', 'success');
     } catch (err) {
         console.error(err);
     } finally {

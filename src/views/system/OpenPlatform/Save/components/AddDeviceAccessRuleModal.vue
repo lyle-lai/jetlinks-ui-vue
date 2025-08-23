@@ -1,7 +1,7 @@
 <template>
-  <j-modal :visible="visible" title="添加授权规则" @ok="handleOk" @cancel="handleCancel" width="1000px">
+  <a-modal :visible="visible" :title="title" @ok="handleOk" @cancel="handleCancel" width="1000px">
     <a-tabs v-model:activeKey="activeTab">
-      <a-tab-pane key="device" tab="设备">
+      <a-tab-pane key="DEVICE" tab="设备">
         <pro-search type="simple" :columns="deviceColumns" @search="onDeviceSearch" />
         <j-pro-table
           ref="deviceTableRef"
@@ -11,7 +11,7 @@
           :rowSelection="{ selectedRowKeys: selectedDeviceKeys, onSelect: onSelectDevice, onSelectAll: onSelectAllDevices }"
         />
       </a-tab-pane>
-      <a-tab-pane key="product" tab="产品">
+      <a-tab-pane key="PRODUCT" tab="产品">
         <pro-search type="simple" :columns="productColumns" @search="onProductSearch" />
         <j-pro-table
           ref="productTableRef"
@@ -21,7 +21,7 @@
           :rowSelection="{ selectedRowKeys: selectedProductKeys, onSelect: onSelectProduct, onSelectAll: onSelectAllProducts }"
         />
       </a-tab-pane>
-      <a-tab-pane key="organization" tab="组织">
+      <a-tab-pane key="ORGANIZATION" tab="组织">
         <pro-search type="simple" :columns="organizationColumns" @search="onOrganizationSearch" />
         <j-pro-table
           ref="organizationTableRef"
@@ -32,7 +32,7 @@
         />
       </a-tab-pane>
     </a-tabs>
-  </j-modal>
+  </a-modal>
 </template>
 
 <script setup lang="ts">
@@ -46,7 +46,7 @@ import { onlyMessage } from '@/utils/comm';
 const props = defineProps<{ visible: boolean }>();
 const emit = defineEmits(['update:visible', 'select']);
 
-const activeTab = ref('device');
+const activeTab = ref('DEVICE');
 
 // Helper to manage selected items (full records)
 const selectedItemsMap = ref<Map<string, any>>(new Map()); // Stores {id: record}
@@ -82,14 +82,14 @@ const queryDevices = async (params: any) => {
 };
 const onDeviceSearch = (e: any) => { deviceQueryParams.value = e; };
 const onSelectDevice = (record: any, selected: boolean) => {
-  updateSelectedItems(record, selected, 'device');
+  updateSelectedItems(record, selected, 'DEVICE');
 };
 const onSelectAllDevices = (selected: boolean, _: any[], changeRows: any) => {
   changeRows.forEach((item: any) => {
-    updateSelectedItems(item, selected, 'device');
+    updateSelectedItems(item, selected, 'DEVICE');
   });
 };
-const selectedDeviceKeys = computed(() => getSelectedKeysForTab('device'));
+const selectedDeviceKeys = computed(() => getSelectedKeysForTab('DEVICE'));
 
 
 // Product related
@@ -104,14 +104,14 @@ const queryProducts = async (params: any) => {
 };
 const onProductSearch = (e: any) => { productQueryParams.value = e; };
 const onSelectProduct = (record: any, selected: boolean) => {
-  updateSelectedItems(record, selected, 'product');
+  updateSelectedItems(record, selected, 'PRODUCT');
 };
 const onSelectAllProducts = (selected: boolean, _: any[], changeRows: any) => {
   changeRows.forEach((item: any) => {
-    updateSelectedItems(item, selected, 'product');
+    updateSelectedItems(item, selected, 'PRODUCT');
   });
 };
-const selectedProductKeys = computed(() => getSelectedKeysForTab('product'));
+const selectedProductKeys = computed(() => getSelectedKeysForTab('PRODUCT'));
 
 
 // Organization related
@@ -136,14 +136,14 @@ const queryOrganizations = async (params: any) => {
 };
 const onOrganizationSearch = (e: any) => { organizationQueryParams.value = e; };
 const onSelectOrganization = (record: any, selected: boolean) => {
-  updateSelectedItems(record, selected, 'organization');
+  updateSelectedItems(record, selected, 'ORGANIZATION');
 };
 const onSelectAllOrganizations = (selected: boolean, _: any[], changeRows: any) => {
   changeRows.forEach((item: any) => {
-    updateSelectedItems(item, selected, 'organization');
+    updateSelectedItems(item, selected, 'ORGANIZATION');
   });
 };
-const selectedOrganizationKeys = computed(() => getSelectedKeysForTab('organization'));
+const selectedOrganizationKeys = computed(() => getSelectedKeysForTab('ORGANIZATION'));
 
 
 const handleOk = () => {
@@ -164,7 +164,7 @@ const handleCancel = () => {
 
 watch(() => props.visible, (newVal) => {
   if (newVal) {
-    activeTab.value = 'device';
+    activeTab.value = 'DEVICE';
     selectedItemsMap.value.clear();
     deviceQueryParams.value = {};
     productQueryParams.value = {};

@@ -1,6 +1,7 @@
 import { request } from '@jetlinks-web/core';
 
 const baseUrl = '/open-platform/application';
+const deviceAuthBaseUrl = '/open-platform/device-auth';
 
 // 使用POST方式分页动态查询
 export const query = (data: any) => request.post(`${baseUrl}/_query`, data);
@@ -25,3 +26,9 @@ export const enable = (id: string) => request.put(`${baseUrl}/${id}/_enable`);
 
 // 禁用
 export const disable = (id: string) => request.put(`${baseUrl}/${id}/_disable`);
+
+// 获取应用的设备授权规则列表
+export const getDeviceAuthRules = (platformAppId: string) => request.get(`${deviceAuthBaseUrl}/${platformAppId}`);
+
+// 保存应用的设备授权规则列表（全量覆盖）
+export const saveDeviceAuthRules = (platformAppId: string, data: any[]) => request.post(`${deviceAuthBaseUrl}/${platformAppId}`, data);
