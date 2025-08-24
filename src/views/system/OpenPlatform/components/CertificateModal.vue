@@ -7,7 +7,7 @@
         <a-form layout="vertical">
             <a-form-item label="App ID">
                 <a-input-group compact>
-                    <a-input :value="data.id" readonly />
+                    <a-input :value="data.appId" readonly />
                 </a-input-group>
             </a-form-item>
             <a-form-item label="App Key">
@@ -72,12 +72,12 @@ const copyAll = () => {
 }
 
 const copyAllCredentials = () => {
-  const { id, appKey, appSecret } = props.data;
-  if (!id || !appKey || !appSecret) {
+  const { appId, appKey, appSecret } = props.data;
+  if (!appId || !appKey || !appSecret) {
     onlyMessage('凭证不完整', 'warning');
     return;
   }
-  const textToCopy = `App ID: ${id}\nApp Key: ${appKey}\nApp Secret: ${appSecret}`;
+  const textToCopy = `App IDApp ID: ${appId}\nApp Key: ${appKey}\nApp Secret: ${appSecret}`;
 
   if (navigator.clipboard) {
     navigator.clipboard.writeText(textToCopy).then(() => {
