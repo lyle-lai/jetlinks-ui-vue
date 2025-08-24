@@ -32,3 +32,14 @@ export const getDeviceAuthRules = (platformAppId: string) => request.get(`${devi
 
 // 保存应用的设备授权规则列表（全量覆盖）
 export const saveDeviceAuthRules = (platformAppId: string, data: any[]) => request.post(`${deviceAuthBaseUrl}/${platformAppId}`, data);
+
+// 获取Swagger API资源列表
+export const getSwaggerApiList = () => request.get(`/jetlinks/openapi/resources`);
+
+const apiConfigBaseUrl = '/open-platform/api-config';
+
+// 获取指定应用的所有API配置
+export const getApiConfig = (platformAppId: string) => request.get(`${apiConfigBaseUrl}/${platformAppId}/all`);
+
+// 批量保存或更新API配置
+export const saveApiConfig = (platformAppId: string, data: any[]) => request.post(`${apiConfigBaseUrl}/${platformAppId}`, data);

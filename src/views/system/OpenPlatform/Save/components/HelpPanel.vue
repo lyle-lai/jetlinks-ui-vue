@@ -32,7 +32,7 @@ const helpData: Record<string, { title: string, content: string }> = {
     apiConfig: {
         title: 'API权限配置帮助',
         content: `
-            <p><strong>从Swagger导入:</strong> 推荐使用此方式从平台自动加载可用的API列表，避免手动输入错误。</p>
+<!--            <p><strong>从Swagger导入:</strong> 推荐使用此方式从平台自动加载可用的API列表，避免手动输入错误。</p>-->
             <p><strong>调用次数限制:</strong> 设置单个API的调用频率，以防止恶意调用或程序错误导致平台资源耗尽。格式为“次数/时间单位”，例如 '60/m' (60次/分钟), '1000/h' (1000次/小时)。</p>
             <p><strong>签名校验:</strong> (推荐开启) 开启后，平台会验证每个API请求的签名，以确保请求未被篡改，大大增强安全性。</p>
         `,

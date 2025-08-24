@@ -20,7 +20,7 @@
                         {{ getRuleTypeText(record.type) }}
                     </template>
                     <template v-if="column.key === 'action'">
-                        <a-button type="link" @click="removeRule(record.id)">移除</a-button>
+                        <j-button type="link" @click="removeRule(record)">移除</j-button>
                     </template>
                 </template>
             </a-table>
@@ -154,9 +154,9 @@ const handleAddRule = (selectedRules: any[]) => {
     addDeviceAccessRuleModalVisible.value = false;
 };
 
-const removeRule = (id: string) => {
+const removeRule = (ruleToRemove: any) => {
     const targetList = currentMode.value === 'WHITELIST' ? whitelistRules : blacklistRules;
-    targetList.value = targetList.value.filter((rule: any) => rule.id !== id);
+    targetList.value = targetList.value.filter((rule: any) => !(rule.id === ruleToRemove.id && rule.type === ruleToRemove.type));
 };
 
 </script>

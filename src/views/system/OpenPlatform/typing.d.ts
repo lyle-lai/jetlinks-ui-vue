@@ -15,8 +15,9 @@ export interface OpenPlatformItem {
 }
 
 export interface ApiInfo {
-    path: string;
-    method: string;
-    limit: string;
-    needSignature: boolean;
+    apiPath: string;
+    requestMethod: string;
+    rateLimit?: string;
+    signatureVerificationEnabled?: boolean;
+    description?: string;
 }
